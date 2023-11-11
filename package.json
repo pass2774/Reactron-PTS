@@ -6,16 +6,30 @@
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
+    "autoprefixer": "^10.4.16",
+    "electron-is-dev": "^2.0.0",
+    "postcss": "^8.4.31",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-scripts": "5.0.1",
+    "tailwindcss": "^3.3.5",
     "web-vitals": "^2.1.4"
   },
+  "main": "./public/electron.js",
+  "homepage": "./",
+  "build": {
+    "productName": "react-electron",
+    "asar": true,
+    "appId": "org.sss.electron-react"
+  },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "react-start": "react-scripts start",
+    "react-build": "react-scripts build",
+    "start": "concurrently \"cross-env NODE_ENV=development BROWSER=none npm run react-start\" \"wait-on http://localhost:3000 && electron .\"",
+    "build": "npm run react-build && electron-builder",
+    "release": "npm run react-build && electron-builder --publish=always"
   },
   "eslintConfig": {
     "extends": [
@@ -34,5 +48,12 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "cross-env": "^7.0.3",
+    "electron": "^27.0.4",
+    "electron-builder": "^24.6.4",
+    "wait-on": "^7.1.0"
   }
 }

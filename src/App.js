@@ -14,13 +14,21 @@ function App() {
 
   const [version, setVersion] = useState("123");
   const [files, setFiles] = useState([]);
-  const [robotOperationStatus, setRobotMode] = useState(2); //  Power Off,  Booting, Robot\nIdling, Release\nBrake, Robot\nOperational
 
+  const [robotProfile, setRobotProfile] = useState({
+    "Robot Name": "KARI Robot 1",
+    "Hardware": "UR5e",
+    "First Installed": "2023-12-01",
+    "Serial Number": "xxx-xxx-xxxx-xxxx",
+    "MAC address": "xx:xx:xx:xx:xx:xx"
+  }); 
+
+  const [robotOperationStatus, setRobotOperationStatus] = useState(0); //  Power Off,  Booting, Robot\nIdling, Release\nBrake, Robot\nOperational
   const [isNetworkConnected, setIsNetworkConnected] = useState(false);
   const [isRobotConnected, setIsRobotConnected] = useState(false);
   const [isRobotPoweredOn, setIsRobotPoweredOn] = useState(false);
   const [isProgramRunning, setIsProgramRunning] = useState(false);
-  const [robotControlMode, setRobotControlMode] = useState("Remote"); // ["Remote", "Local"]
+  const [robotControlMode, setRobotControlMode] = useState("Not Available"); // ["Unknown","Remote", "Local"]
 
   useEffect(() => {
     ipcRenderer.send("app_version");
@@ -38,11 +46,45 @@ function App() {
     ipcRenderer.on("files", (event, args) => {
       setFiles(args.files);
     });
+
+
+    ipcRenderer.on("robot-dashboard", (event, args) => {
+      console.log("robot-dashboard: ", args);
+      if (args.robotProfile) {
+        setRobotProfile(args.robotProfile);
+      }
+
+
+      if (args.isNetworkConnected) {
+        setIsNetworkConnected(args.isNetworkConnected);
+      } 
+      if (args.isRobotConnected) {
+        setIsRobotConnected(args.isRobotConnected);
+      } 
+      if (args.isRobotPoweredOn) {
+        setIsRobotPoweredOn(args.isRobotPoweredOn);
+      }
+      if (args.robotOperationStatus) {
+        setRobotOperationStatus(args.robotOperationStatus);
+      } 
+      if (args.robotControlMode) {
+        setRobotControlMode(args.robotControlMode);
+      }
+      if (args.isProgramRunning) {
+        setIsProgramRunning(args.isProgramRunning);
+      }
+      if (args.speedSlider) {
+        setSliderValue(args.speedSlider);
+      }
+
+    })
   }, []);
 
 
   const [selectedServer, setSelectedServer] = useState("aws");
   const [serverEndpoint, setServerEndpoint] = useState("https://api.portal301.com");
+  const [robotEndPoint, setRobotEndPoint] = useState("192.167.0.3");
+
   const onChange = (e) => {
     console.log("onSelect")
     console.log(e.target.value);
@@ -59,39 +101,80 @@ function App() {
     return `${hours}:${minutes}:${seconds}`;
   }
 
-  const onBtnClick = () => {
+  const onStartStreammingBtnClick = () => {
     ipcRenderer.send("runExternalProcess");
   }
 
   const onConnectBtnClick = () => {
-    ipcRenderer.send("connectRobot");
+
+    const requestForm = [
+      {
+        command: "connect",
+        endpoint: {
+          network: serverEndpoint,
+          robot: robotEndPoint  
+        }
+      }
+    ];
+
+    console.log("connectionRequestForm: ", requestForm);
+
+    ipcRenderer.send("robot-dashboard-request", requestForm);
     setIsRobotConnected(true);
+    setRobotOperationStatus(1);
+    setRobotControlMode("Remote");
   }
   const onDisconnectBtnClick = () => {
-    ipcRenderer.send("disconnectRobot");
+    const requestForm = [
+      {
+        command: "disconnect"
+      }
+    ];
+    ipcRenderer.send("robot-dashboard-request",requestForm);
     setIsRobotConnected(false);
+    setRobotOperationStatus(0);
+    setRobotControlMode("Not Available");
   }
   const onPowerOnBtnClick = () => {
-    ipcRenderer.send("powerOnRobot");
+    const requestForm = [
+      {
+        command: "powerOn"
+      }
+    ];
+    ipcRenderer.send("robot-dashboard-request",requestForm);
     setIsRobotPoweredOn(true);
+    setRobotOperationStatus(5);
   }
   const onPowerOffBtnClick = () => {
-    ipcRenderer.send("powerOffRobot");
+    const requestForm = [
+      {
+        command: "powerOff"
+      }
+    ];
+    ipcRenderer.send("robot-dashboard-request",requestForm);
     setIsRobotPoweredOn(false);
+    setRobotOperationStatus(1);
   }
   const onStartProgramBtnClick = () => {
-    ipcRenderer.send("startProgram");
+    const requestForm = [
+      {
+        command: "startProgram"
+      }
+    ];
+    ipcRenderer.send("robot-dashboard-request",requestForm);
     console.log("onClickStartProgramBtn");
-    ipcRenderer.send("runExternalProcess");
     setStartingTime(new Date());
     setIsProgramRunning(true);
     setProgramState("running");
   }
   const onStopProgramBtnClick = () => {
-    ipcRenderer.send("stopProgram");
-
+    const requestForm = [
+      {
+        command: "stopProgram"
+      }
+    ];
+    ipcRenderer.send("robot-dashboard-request",requestForm);
     console.log("onClickStopProgramBtn");
-    ipcRenderer.send("stopExternalProcess");
     setProgramState("stopped");
     setIsProgramRunning(false);
   }
@@ -123,8 +206,8 @@ function App() {
       <div className="h-full w-full">
       <div className="bg-[white] w-full h-[30rem] flex flex-col p-[1rem] rounded-xl border border-2 border-gray">
         <div className="text-3xl">Camera Section</div>
-          <button className="bg-[#ACF] w-[12rem] h-[5rem] rounded-xl shadow-md text-2xl text-[white] m-[0.2rem]" onClick={onBtnClick}>Start Streaming</button>
-          <button className="bg-[#ACF] w-[12rem] h-[5rem] rounded-xl shadow-md text-2xl text-[white] m-[0.2rem]" onClick={onBtnClick}>Disconnect</button>
+          <button className="bg-[#ACF] w-[12rem] h-[5rem] rounded-xl shadow-md text-2xl text-[white] m-[0.2rem]" onClick={onStartStreammingBtnClick}>Start Streaming</button>
+          <button className="bg-[#ACF] w-[12rem] h-[5rem] rounded-xl shadow-md text-2xl text-[white] m-[0.2rem]" onClick={onStartStreammingBtnClick}>Disconnect</button>
         </div>
         <div className="bg-white w-full h-full flex flex-col items-center py-[2rem] px-[8rem] rounded-xl border border-2 border-gray">
           <div className="text-3xl font-bold mb-[1rem] text-start w-full">Robot Dashboard</div>
@@ -148,16 +231,18 @@ function App() {
                 </SectionLevel2>
                 <SectionLevel2 title="Robot Connectivity" className="w-full mt-[2rem]">
                   <div className="w-full pl-[1rem]">
-                    <FieldInput field="Robot IP" input="192.167.0.3" />
+                    <FieldInput field="Robot IP" input={robotEndPoint} width="14rem"/>
                   </div>
                 </SectionLevel2>
                 <SectionLevel2 title="Robot Profile" className="w-full mt-[5rem]">
                   <div className="w-full pl-[1rem]">
-                    <FieldText field="Robot Name" content="KARI Robot 1" />
-                    <FieldText field="Hardware" content="UR5e" />
-                    <FieldText field="First Installed" content="2023-12-01" />
-                    <FieldText field="Serial Number" content="xxx-xxx-xxxx-xxxx" />
-                    <FieldText field="MAC address" content="xx:xx:xx:xx:xx:xx" />
+                    {
+                      Object.entries(robotProfile).map( ([key, value]) => {
+                        return (
+                          <FieldText field={key} content={value} />
+                        )
+                      })
+                    }
                   </div>
                 </SectionLevel2>
               </div>
@@ -169,19 +254,19 @@ function App() {
                   <div className="flex flex-col items-center w-[30rem]">
                   <SectionLevel2 title="Connection" className="w-[30rem]">
                     <div className="w-full pl-[1rem]">
-                      <FieldText field="Network" content="Connected" />
-                      <FieldText field="Robot" content="Connected" />
+                      <FieldText field="Network" content={isNetworkConnected?"Connected":"Disconnected"} />
+                      <FieldText field="Robot" content={isRobotConnected?"Connected":"Disconnected"} />
                     </div>
                     <div className="w-full mt-[1rem] flex justify-center">
                       <CustomButton title="Connect" onClick={onConnectBtnClick} isButtonDisabled={isRobotConnected}/>
                       <CustomButton title="Disconnect" onClick={onDisconnectBtnClick} isButtonDisabled={!isRobotConnected}/>
                     </div>
                     </SectionLevel2>
-                    <SectionLevel2 title="Operation Status" className="w-[30rem] mt-[2rem]">
+                    <SectionLevel2 title="Operation Status" className="w-[30rem] mt-[2rem]" enable={isRobotConnected}>
                       <div className = "mt-[1rem]">
                         <RobotModeIndicatorSection status={robotOperationStatus}/>
-                        <div className = "flex justify-center pl-[4rem] mt-[1rem]">
-                          <FieldText field="Control Mode" content="Remote" />
+                        <div className = "flex justify-center pl-[3rem] mt-[1rem]">
+                          <FieldText field="Control Mode" content={robotControlMode} />
                         </div>
                         <div className="mt-[1rem]">
                           <CustomButton title="Power On" onClick={onPowerOnBtnClick} isButtonDisabled={!(isRobotConnected && !isRobotPoweredOn)}/>
@@ -192,7 +277,7 @@ function App() {
 
                   </div>
 
-                  <SectionLevel2 title="Program" className="w-[30rem] ml-[2rem]">
+                  <SectionLevel2 title="Program" className="w-[30rem] ml-[2rem]" enable={isRobotConnected && isRobotPoweredOn}>
                     <div className="w-full pl-[1rem]">
                       <FieldText field="Name" content="ContinuousServoJ" />
                       <FieldText field="Version" content="1.1.0" />
@@ -274,15 +359,15 @@ const SectionLevel1 = ({ title, children }) => {
 };
 
 
-const SectionLevel2 = ({ title, children, ...props }) => {
+const SectionLevel2 = ({ title, children, enable=true,...props }) => {
 
   return (
     <div className={`flex flex-col items-center mx-[0.5rem] ${props.className}`}>
-        <div class=" drop-shadow-md w-full flex justify-start items-center">
+        <div className={`drop-shadow-md w-full flex justify-start items-center`}>
           <div class="mr-[0.5rem] text-lg font-bold whitespace-pre">{title}</div>
           <div class="w-full h-[2px] bg-black rounded-full"></div>
         </div>
-        <div class="w-full mt-[0.5rem]">
+        <div class={`w-full mt-[0.5rem] ${enable===true? "":"opacity-30"}`}>
           {children}
         </div>
       </div>

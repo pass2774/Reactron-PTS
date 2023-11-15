@@ -203,48 +203,66 @@ function App() {
 
   return (
     <div className="App">
-      <div className="h-full w-full">
-      <div className="bg-[white] w-full h-[30rem] flex flex-col p-[1rem] rounded-xl border border-2 border-gray">
-        <div className="text-3xl">Camera Section</div>
-          <button className="bg-[#ACF] w-[12rem] h-[5rem] rounded-xl shadow-md text-2xl text-[white] m-[0.2rem]" onClick={onStartStreammingBtnClick}>Start Streaming</button>
-          <button className="bg-[#ACF] w-[12rem] h-[5rem] rounded-xl shadow-md text-2xl text-[white] m-[0.2rem]" onClick={onStartStreammingBtnClick}>Disconnect</button>
-        </div>
-        <div className="bg-white w-full h-full flex flex-col items-center py-[2rem] px-[8rem] rounded-xl border border-2 border-gray">
-          <div className="text-3xl font-bold mb-[1rem] text-start w-full">Robot Dashboard</div>
-          <div className="flex">
+      <div className="bg-white w-full h-full flex flex-col items-center py-[1rem] px-[8rem]">
+        <div className="flex">
+          <SectionLevel1>
+            <div className="text-3xl font-bold mb-[1rem] text-start w-full">System Configuration</div>
+            <div className = "flex flex-col items-center w-[28rem]">
+
+              <SectionLevel2 title="Camera Profile" className="w-full mt-[1rem]">
+                <div className="w-full pl-[1rem]">
+                  {
+                    Object.entries(robotProfile).map( ([key, value]) => {
+                      return (
+                        <FieldText field={key} content={value} />
+                      )
+                    })
+                  }
+                </div>
+              </SectionLevel2>
+
+              <SectionLevel2 title="Network" className="w-full mt-[4rem]">
+                <div className="text-start w-full pl-[1rem]">
+                  <FieldSelector field="Server">
+                    <select id="serverSelect" value={selectedServer} onChange={onChange} className="w-full h-full text-md text-start font-bold shadow-sm border border-1 border-[#CCF] rounded-lg px-[1rem] bg-[#FAFAFA]">
+                      <option value="intranet">Intranet server</option>
+                      <option value="aws">AWS public server</option>
+                    </select>
+                  </FieldSelector>
+                  {
+                  selectedServer === "intranet" 
+                    ? (<FieldInput field="EndPoint" input="https://127.0.0.1:3333" width="14rem" />) 
+                    : (<FieldText field="EndPoint" content="https://api.portal301.com" />)
+                  }
+                </div>
+              </SectionLevel2>
+              <SectionLevel2 title="Robot Connectivity" className="w-full mt-[6rem]">
+                <div className="w-full pl-[1rem]">
+                  <FieldInput field="Robot IP" input={robotEndPoint} width="14rem"/>
+                </div>
+              </SectionLevel2>
+              <SectionLevel2 title="Robot Profile" className="w-full mt-[8rem]">
+                <div className="w-full pl-[1rem]">
+                  {
+                    Object.entries(robotProfile).map( ([key, value]) => {
+                      return (
+                        <FieldText field={key} content={value} />
+                      )
+                    })
+                  }
+                </div>
+              </SectionLevel2>
+
+              
+            </div>
+          </SectionLevel1>
+
+          <div className="flex flex-col gap-[1rem]">
             <SectionLevel1>
-              <div className = "flex flex-col items-center w-[28rem]">
-                <SectionLevel2 title="Network" className="w-full">
-                  <div className="text-start w-full pl-[1rem]">
-                    <FieldSelector field="Server">
-                      <select id="serverSelect" value={selectedServer} onChange={onChange} className="w-full h-full text-md text-start font-bold shadow-sm border border-1 border-[#CCF] rounded-lg px-[1rem] bg-[#FAFAFA]">
-                        <option value="intranet">Intranet server</option>
-                        <option value="aws">AWS public server</option>
-                      </select>
-                    </FieldSelector>
-                    {
-                    selectedServer === "intranet" 
-                      ? (<FieldInput field="EndPoint" input="https://127.0.0.1:3333" width="14rem" />) 
-                      : (<FieldText field="EndPoint" content="https://api.portal301.com" />)
-                    }
-                  </div>
-                </SectionLevel2>
-                <SectionLevel2 title="Robot Connectivity" className="w-full mt-[2rem]">
-                  <div className="w-full pl-[1rem]">
-                    <FieldInput field="Robot IP" input={robotEndPoint} width="14rem"/>
-                  </div>
-                </SectionLevel2>
-                <SectionLevel2 title="Robot Profile" className="w-full mt-[5rem]">
-                  <div className="w-full pl-[1rem]">
-                    {
-                      Object.entries(robotProfile).map( ([key, value]) => {
-                        return (
-                          <FieldText field={key} content={value} />
-                        )
-                      })
-                    }
-                  </div>
-                </SectionLevel2>
+              <div className="bg-[white] w-full h-[28rem] flex flex-col p-[1rem] rounded-xl border border-2 border-gray">
+                <div className="text-3xl">Camera Section</div>
+                <button className="bg-[#ACF] w-[12rem] h-[5rem] rounded-xl shadow-md text-2xl text-[white] m-[0.2rem]" onClick={onStartStreammingBtnClick}>Start Streaming</button>
+                <button className="bg-[#ACF] w-[12rem] h-[5rem] rounded-xl shadow-md text-2xl text-[white] m-[0.2rem]" onClick={onStartStreammingBtnClick}>Disconnect</button>
               </div>
             </SectionLevel1>
 
@@ -309,19 +327,20 @@ function App() {
 
               </div>
               </SectionLevel1>
-
             </div>
-          {/* <img src={logo} className="App-logo" alt="logo" />
-          <a
-            className="App-link"
-            href="https://reactjs.org"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Learn React
-          </a> */}
-        </div>
+
+          </div>
+        {/* <img src={logo} className="App-logo" alt="logo" />
+        <a
+          className="App-link"
+          href="https://reactjs.org"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Learn React
+        </a> */}
       </div>
+
     </div>
   );
 }

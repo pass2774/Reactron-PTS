@@ -27,8 +27,13 @@ function App() {
   const [isNetworkConnected, setIsNetworkConnected] = useState(false);
   const [isRobotConnected, setIsRobotConnected] = useState(false);
   const [isRobotPoweredOn, setIsRobotPoweredOn] = useState(false);
-  const [isProgramRunning, setIsProgramRunning] = useState(false);
-  const [robotControlMode, setRobotControlMode] = useState("Not Available"); // ["Unknown","Remote", "Local"]
+  const [robotProgramStatus, setRobotProgramStatus] = useState("not available"); // ["Unknown","running", "stopped", "paused"]
+  const [robotControlMode, setRobotControlMode] = useState("not available"); // ["Unknown","remote", "local"]
+
+  const [selectedServer, setSelectedServer] = useState("aws");
+  const [serverEndpoint, setServerEndpoint] = useState("https://api.portal301.com");
+  const [robotEndPoint, setRobotEndPoint] = useState("192.167.0.3");
+
 
   useEffect(() => {
     ipcRenderer.send("app_version");
@@ -50,28 +55,36 @@ function App() {
 
     ipcRenderer.on("robot-dashboard", (event, args) => {
       console.log("robot-dashboard: ", args);
-      if (args.robotProfile) {
+
+      if (args.hasOwnProperty("robotProfile")) {
         setRobotProfile(args.robotProfile);
       }
-
-
-      if (args.isNetworkConnected) {
+      if (args.hasOwnProperty("isNetworkConnected")) {
         setIsNetworkConnected(args.isNetworkConnected);
       } 
-      if (args.isRobotConnected) {
+      if (args.hasOwnProperty("isRobotConnected")) {
         setIsRobotConnected(args.isRobotConnected);
       } 
-      if (args.isRobotPoweredOn) {
+      if (args.hasOwnProperty("isRobotPoweredOn")) {
         setIsRobotPoweredOn(args.isRobotPoweredOn);
       }
-      if (args.robotOperationStatus) {
+      if (args.hasOwnProperty("robotOperationStatus")) {
         setRobotOperationStatus(args.robotOperationStatus);
       } 
-      if (args.robotControlMode) {
+      if (args.hasOwnProperty("robotControlMode")) {
         setRobotControlMode(args.robotControlMode);
       }
-      if (args.isProgramRunning) {
-        setIsProgramRunning(args.isProgramRunning);
+      if (args.hasOwnProperty("robotProgramStatus")) {
+        setRobotProgramStatus(args.robotProgramStatus);
+        if (args.robotProgramStatus==="running") {
+          setStartingTime(new Date());
+          // setProgramState("running");
+        } else {
+          // setProgramState("stopped");
+        }
+        // setStartingTime(new Date());
+        // setIsRobotProgramRunning(true);
+        // setProgramState("running");
       }
       if (args.speedSlider) {
         setSliderValue(args.speedSlider);
@@ -81,9 +94,6 @@ function App() {
   }, []);
 
 
-  const [selectedServer, setSelectedServer] = useState("aws");
-  const [serverEndpoint, setServerEndpoint] = useState("https://api.portal301.com");
-  const [robotEndPoint, setRobotEndPoint] = useState("192.167.0.3");
 
   const onChange = (e) => {
     console.log("onSelect")
@@ -106,86 +116,56 @@ function App() {
   }
 
   const onConnectBtnClick = () => {
-
-    const requestForm = [
-      {
-        command: "connect",
+    const requestForm = {
+        connect: true,
         endpoint: {
           network: serverEndpoint,
           robot: robotEndPoint  
         }
-      }
-    ];
-
+      };
     console.log("connectionRequestForm: ", requestForm);
-
     ipcRenderer.send("robot-dashboard-request", requestForm);
-    setIsRobotConnected(true);
-    setRobotOperationStatus(1);
-    setRobotControlMode("Remote");
   }
   const onDisconnectBtnClick = () => {
-    const requestForm = [
-      {
-        command: "disconnect"
-      }
-    ];
+    const requestForm = {
+        connect: false
+      };
     ipcRenderer.send("robot-dashboard-request",requestForm);
-    setIsRobotConnected(false);
-    setRobotOperationStatus(0);
-    setRobotControlMode("Not Available");
   }
   const onPowerOnBtnClick = () => {
-    const requestForm = [
-      {
-        command: "powerOn"
-      }
-    ];
+    const requestForm = {
+        power: true
+      };
+
     ipcRenderer.send("robot-dashboard-request",requestForm);
-    setIsRobotPoweredOn(true);
-    setRobotOperationStatus(5);
   }
   const onPowerOffBtnClick = () => {
-    const requestForm = [
-      {
-        command: "powerOff"
-      }
-    ];
+    const requestForm = {
+        power: false
+      };
     ipcRenderer.send("robot-dashboard-request",requestForm);
-    setIsRobotPoweredOn(false);
-    setRobotOperationStatus(1);
   }
   const onStartProgramBtnClick = () => {
-    const requestForm = [
-      {
-        command: "startProgram"
-      }
-    ];
+    const requestForm = {
+        program: "start"
+      };
     ipcRenderer.send("robot-dashboard-request",requestForm);
     console.log("onClickStartProgramBtn");
-    setStartingTime(new Date());
-    setIsProgramRunning(true);
-    setProgramState("running");
   }
   const onStopProgramBtnClick = () => {
-    const requestForm = [
-      {
-        command: "stopProgram"
-      }
-    ];
+    const requestForm = {
+        program: "stop"
+      };
     ipcRenderer.send("robot-dashboard-request",requestForm);
     console.log("onClickStopProgramBtn");
-    setProgramState("stopped");
-    setIsProgramRunning(false);
   }
 
-  const [programState, setProgramState] = useState("stopped"); // ["stopped", "running", "paused"]
   const [startingTime, setStartingTime] = useState(new Date(0));
   const [elapsedTime, setRunningTime] = useState(new Date(0));
   
   useEffect(() => {
     const interval = setInterval(() => {
-      if (programState === "running") {
+      if (robotProgramStatus === "running") {
         const currentTime = new Date();
         setRunningTime(new Date(currentTime - startingTime));
       }
@@ -193,7 +173,7 @@ function App() {
     }, 1000);
   
     return () => clearInterval(interval);
-  }, [programState, elapsedTime, startingTime]);
+  }, [robotProgramStatus, elapsedTime, startingTime]);
 
   const [sliderValue, setSliderValue] = useState(50);
 
@@ -276,8 +256,8 @@ function App() {
                       <FieldText field="Robot" content={isRobotConnected?"Connected":"Disconnected"} />
                     </div>
                     <div className="w-full mt-[1rem] flex justify-center">
-                      <CustomButton title="Connect" onClick={onConnectBtnClick} isButtonDisabled={isRobotConnected}/>
-                      <CustomButton title="Disconnect" onClick={onDisconnectBtnClick} isButtonDisabled={!isRobotConnected}/>
+                      <CustomButton title="Connect" onClick={onConnectBtnClick} isButtonEnabled={!isRobotConnected}/>
+                      <CustomButton title="Disconnect" onClick={onDisconnectBtnClick} isButtonEnabled={isRobotConnected}/>
                     </div>
                     </SectionLevel2>
                     <SectionLevel2 title="Operation Status" className="w-[30rem] mt-[2rem]" enable={isRobotConnected}>
@@ -287,8 +267,8 @@ function App() {
                           <FieldText field="Control Mode" content={robotControlMode} />
                         </div>
                         <div className="mt-[1rem]">
-                          <CustomButton title="Power On" onClick={onPowerOnBtnClick} isButtonDisabled={!(isRobotConnected && !isRobotPoweredOn)}/>
-                          <CustomButton title="Power Off" onClick={onPowerOffBtnClick} isButtonDisabled={!(isRobotConnected  && isRobotPoweredOn)}/>
+                          <CustomButton title="Power On" onClick={onPowerOnBtnClick} isButtonEnabled={isRobotConnected && !isRobotPoweredOn}/>
+                          <CustomButton title="Power Off" onClick={onPowerOffBtnClick} isButtonEnabled={isRobotConnected  && isRobotPoweredOn}/>
                         </div>
                       </div>
                     </SectionLevel2>
@@ -299,7 +279,7 @@ function App() {
                     <div className="w-full pl-[1rem]">
                       <FieldText field="Name" content="ContinuousServoJ" />
                       <FieldText field="Version" content="1.1.0" />
-                      <FieldText field="Status" content="Running" />
+                      <FieldText field="Status" content={robotProgramStatus} />
                       <FieldText field="Starting Time" content={getTimeString(startingTime)} />
                       <FieldText field="Running Time" content={getTimeString(elapsedTime)} />
                       <div className="mt-[2rem]">
@@ -318,8 +298,9 @@ function App() {
 
                     </div>
                     <div className="mt-[2rem]">
-                      <CustomButton title="Start" onClick={onStartProgramBtnClick} isButtonDisabled={!(isRobotConnected && isRobotPoweredOn && !isProgramRunning)}/>
-                      <CustomButton title="Stop" onClick={onStopProgramBtnClick} isButtonDisabled={!(isRobotConnected && isRobotPoweredOn && isProgramRunning)}/>
+                    {/* <CustomButton title="Start" onClick={onStartProgramBtnClick} isButtonDisabled={((!isRobotConnected) || (!isRobotPoweredOn)) && (robotProgramStatus === "running")}/> */}
+                    <CustomButton title="Start" onClick={onStartProgramBtnClick} isButtonEnabled={(isRobotConnected && isRobotPoweredOn) && !(robotProgramStatus === "running")}/>
+                      <CustomButton title="Stop" onClick={onStopProgramBtnClick} isButtonEnabled={(isRobotConnected && isRobotPoweredOn) && (robotProgramStatus === "running")}/>
                     </div>
 
                   </SectionLevel2>
@@ -345,11 +326,11 @@ function App() {
   );
 }
 
-const CustomButton = ({ title, onClick, isButtonDisabled, themeColor}) => {
+const CustomButton = ({ title, onClick, isButtonEnabled=true, themeColor}) => {
   return (
     <button 
       onClick={onClick}
-      disabled={isButtonDisabled}
+      disabled={!isButtonEnabled}
       className={`w-[10rem] h-[5rem] font-bold py-2 px-4 rounded text-white
       ${themeColor==='darkblue'
         ? 'bg-blue-900 hover:bg-blue-700'
@@ -357,7 +338,7 @@ const CustomButton = ({ title, onClick, isButtonDisabled, themeColor}) => {
         ? 'bg-red-500 hover:bg-red-700'
         : 'bg-blue-500 hover:bg-blue-700' }
 
-      ${isButtonDisabled ? 'opacity-20 cursor-not-allowed' : ''}
+      ${!isButtonEnabled ? 'opacity-20 cursor-not-allowed' : ''}
       `}
     >
       {title}

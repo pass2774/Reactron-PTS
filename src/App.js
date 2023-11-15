@@ -14,6 +14,13 @@ function App() {
 
   const [version, setVersion] = useState("123");
   const [files, setFiles] = useState([]);
+  const [robotOperationStatus, setRobotMode] = useState(2); //  Power Off,  Booting, Robot\nIdling, Release\nBrake, Robot\nOperational
+
+  const [isNetworkConnected, setIsNetworkConnected] = useState(false);
+  const [isRobotConnected, setIsRobotConnected] = useState(false);
+  const [isRobotPoweredOn, setIsRobotPoweredOn] = useState(false);
+  const [isProgramRunning, setIsProgramRunning] = useState(false);
+  const [robotControlMode, setRobotControlMode] = useState("Remote"); // ["Remote", "Local"]
 
   useEffect(() => {
     ipcRenderer.send("app_version");
@@ -33,9 +40,6 @@ function App() {
     });
   }, []);
 
-  const onBtnClick = () => {
-    ipcRenderer.send("runExternalProcess");
-  }
 
   const [selectedServer, setSelectedServer] = useState("aws");
   const [serverEndpoint, setServerEndpoint] = useState("https://api.portal301.com");
@@ -55,10 +59,41 @@ function App() {
     return `${hours}:${minutes}:${seconds}`;
   }
 
-  const onClickStartBtn = () => {
-    console.log("onClickStartBtn");
+  const onBtnClick = () => {
+    ipcRenderer.send("runExternalProcess");
+  }
+
+  const onConnectBtnClick = () => {
+    ipcRenderer.send("connectRobot");
+    setIsRobotConnected(true);
+  }
+  const onDisconnectBtnClick = () => {
+    ipcRenderer.send("disconnectRobot");
+    setIsRobotConnected(false);
+  }
+  const onPowerOnBtnClick = () => {
+    ipcRenderer.send("powerOnRobot");
+    setIsRobotPoweredOn(true);
+  }
+  const onPowerOffBtnClick = () => {
+    ipcRenderer.send("powerOffRobot");
+    setIsRobotPoweredOn(false);
+  }
+  const onStartProgramBtnClick = () => {
+    ipcRenderer.send("startProgram");
+    console.log("onClickStartProgramBtn");
+    ipcRenderer.send("runExternalProcess");
     setStartingTime(new Date());
+    setIsProgramRunning(true);
     setProgramState("running");
+  }
+  const onStopProgramBtnClick = () => {
+    ipcRenderer.send("stopProgram");
+
+    console.log("onClickStopProgramBtn");
+    ipcRenderer.send("stopExternalProcess");
+    setProgramState("stopped");
+    setIsProgramRunning(false);
   }
 
   const [programState, setProgramState] = useState("stopped"); // ["stopped", "running", "paused"]
@@ -76,6 +111,13 @@ function App() {
   
     return () => clearInterval(interval);
   }, [programState, elapsedTime, startingTime]);
+
+  const [sliderValue, setSliderValue] = useState(50);
+
+  const handleSliderChange = (event) => {
+    setSliderValue(event.target.value);
+  };
+
   return (
     <div className="App">
       <div className="h-full w-full">
@@ -93,21 +135,29 @@ function App() {
                   <div className="text-start w-full pl-[1rem]">
                     <FieldSelector field="Server">
                       <select id="serverSelect" value={selectedServer} onChange={onChange} className="w-full h-full text-md text-start font-bold shadow-sm border border-1 border-[#CCF] rounded-lg px-[1rem] bg-[#FAFAFA]">
+                        <option value="intranet">Intranet server</option>
                         <option value="aws">AWS public server</option>
-                        <option value="local">local server</option>
                       </select>
                     </FieldSelector>
-                    <FieldText field="Endpoint" content={serverEndpoint} />
-                    <FieldText field="Status" content="Connected" />
+                    {
+                    selectedServer === "intranet" 
+                      ? (<FieldInput field="EndPoint" input="https://127.0.0.1:3333" width="14rem" />) 
+                      : (<FieldText field="EndPoint" content="https://api.portal301.com" />)
+                    }
                   </div>
                 </SectionLevel2>
-
-                <SectionLevel2 title="Robot Info" className="w-full mt-[1rem]">
+                <SectionLevel2 title="Robot Connectivity" className="w-full mt-[2rem]">
+                  <div className="w-full pl-[1rem]">
+                    <FieldInput field="Robot IP" input="192.167.0.3" />
+                  </div>
+                </SectionLevel2>
+                <SectionLevel2 title="Robot Profile" className="w-full mt-[5rem]">
                   <div className="w-full pl-[1rem]">
                     <FieldText field="Robot Name" content="KARI Robot 1" />
                     <FieldText field="Hardware" content="UR5e" />
                     <FieldText field="First Installed" content="2023-12-01" />
                     <FieldText field="Serial Number" content="xxx-xxx-xxxx-xxxx" />
+                    <FieldText field="MAC address" content="xx:xx:xx:xx:xx:xx" />
                   </div>
                 </SectionLevel2>
               </div>
@@ -117,24 +167,29 @@ function App() {
               <div className = "flex flex-col items-center w-[70rem]">
                 <div className="flex">
                   <div className="flex flex-col items-center w-[30rem]">
-                    <SectionLevel2 title="Connection" className="w-full">
-                      <div className="w-full pl-[1rem]">
-                        <FieldInput field="Robot IP" input="192.167.0.3" />
-                        <FieldText field="Status" content="Connected" />
-                        <FieldText field="Control Mode" content="Remote" />
+                  <SectionLevel2 title="Connection" className="w-[30rem]">
+                    <div className="w-full pl-[1rem]">
+                      <FieldText field="Network" content="Connected" />
+                      <FieldText field="Robot" content="Connected" />
+                    </div>
+                    <div className="w-full mt-[1rem] flex justify-center">
+                      <CustomButton title="Connect" onClick={onConnectBtnClick} isButtonDisabled={isRobotConnected}/>
+                      <CustomButton title="Disconnect" onClick={onDisconnectBtnClick} isButtonDisabled={!isRobotConnected}/>
+                    </div>
+                    </SectionLevel2>
+                    <SectionLevel2 title="Operation Status" className="w-[30rem] mt-[2rem]">
+                      <div className = "mt-[1rem]">
+                        <RobotModeIndicatorSection status={robotOperationStatus}/>
+                        <div className = "flex justify-center pl-[4rem] mt-[1rem]">
+                          <FieldText field="Control Mode" content="Remote" />
+                        </div>
+                        <div className="mt-[1rem]">
+                          <CustomButton title="Power On" onClick={onPowerOnBtnClick} isButtonDisabled={!(isRobotConnected && !isRobotPoweredOn)}/>
+                          <CustomButton title="Power Off" onClick={onPowerOffBtnClick} isButtonDisabled={!(isRobotConnected  && isRobotPoweredOn)}/>
+                        </div>
                       </div>
                     </SectionLevel2>
-                    <SectionLevel2 title="Power" className="w-[30rem]">
-                      <div className="flex w-full justify-center">
-                        <LedIndicator text="Power Off" color={"#F00"}/>
-                        <LedIndicator text="Booting" color={"#FF0"}/>
-                        <LedIndicator text={`Release\nBrake`} color={"#FF0"}/>
-                        <LedIndicator text={`Activating`} color={"#FF0"}/>
-                        <LedIndicator text="Ready" color={"#0F0"}/>
-                      </div>
-                      <button className="bg-[#ACF] w-[10rem] h-[5rem] rounded-xl shadow-md text-2xl text-[white] m-[0.2rem]" onClick={onBtnClick}>Power On</button>
-                      <button className="bg-[#ACF] w-[10rem] h-[5rem] rounded-xl shadow-md text-2xl text-[white] m-[0.2rem]" onClick={onBtnClick}>Power Off</button>
-                    </SectionLevel2>
+
                   </div>
 
                   <SectionLevel2 title="Program" className="w-[30rem] ml-[2rem]">
@@ -144,9 +199,25 @@ function App() {
                       <FieldText field="Status" content="Running" />
                       <FieldText field="Starting Time" content={getTimeString(startingTime)} />
                       <FieldText field="Running Time" content={getTimeString(elapsedTime)} />
+                      <div className="mt-[2rem]">
+                        <FieldText field="Speed Slider" content={`${sliderValue} %`} />
+                        <input
+                          type="range"
+                          id="slider"
+                          min="0"
+                          max="100"
+                          step="1"
+                          value={sliderValue}
+                          onChange={handleSliderChange}
+                          className="w-[24rem] mt-[0.5rem]"
+                        />
+                      </div>
+
                     </div>
-                    <button className="bg-[#ACF] w-[12rem] h-[5rem] rounded-xl shadow-md text-2xl text-[white] m-[0.2rem]" onClick={onClickStartBtn}>Start Program</button>
-                    <button className="bg-[#ACF] w-[12rem] h-[5rem] rounded-xl shadow-md text-2xl text-[white] m-[0.2rem]" onClick={onBtnClick}>Stop Program</button>
+                    <div className="mt-[2rem]">
+                      <CustomButton title="Start" onClick={onStartProgramBtnClick} isButtonDisabled={!(isRobotConnected && isRobotPoweredOn && !isProgramRunning)}/>
+                      <CustomButton title="Stop" onClick={onStopProgramBtnClick} isButtonDisabled={!(isRobotConnected && isRobotPoweredOn && isProgramRunning)}/>
+                    </div>
 
                   </SectionLevel2>
                 </div>
@@ -169,6 +240,26 @@ function App() {
     </div>
   );
 }
+
+const CustomButton = ({ title, onClick, isButtonDisabled, themeColor}) => {
+  return (
+    <button 
+      onClick={onClick}
+      disabled={isButtonDisabled}
+      className={`w-[10rem] h-[5rem] font-bold py-2 px-4 rounded text-white
+      ${themeColor==='darkblue'
+        ? 'bg-blue-900 hover:bg-blue-700'
+        : themeColor==='red'
+        ? 'bg-red-500 hover:bg-red-700'
+        : 'bg-blue-500 hover:bg-blue-700' }
+
+      ${isButtonDisabled ? 'opacity-20 cursor-not-allowed' : ''}
+      `}
+    >
+      {title}
+    </button>
+  );
+};
 
 const SectionLevel1 = ({ title, children }) => {
 
@@ -205,24 +296,20 @@ const FieldSelector = ({ field, children, color }) => {
     <div className="w-fit h-[1.8rem] flex rounded-sm my-[0.2rem]">
       <div className="w-[8rem] h-full text-md text-start truncate font-bold">{field}</div>
       <div class="w-[1rem] h-full font-bold">:</div>
-      <div className="w-[13rem] text-md font-bold">{children}</div>
+      <div className="w-[14rem] text-md font-bold">{children}</div>
     </div>
   );
 };
 
-const FieldInput = ({ field, input, color }) => {
-  const bgColor = color ? Array.isArray(color) ? color[0] : color
-                        : "#FFF";
-
+const FieldInput = ({ field, input, width }) => {
+  const widthInput = width? width : "10rem";
 
   return (
     <div className="w-fit h-[1.8rem] flex rounded-sm my-[0.2rem]">
-      <div 
-        style={{ backgroundColor: bgColor }}
-        className="w-[8rem] h-full text-md text-start truncate font-bold">{field}</div>
+      <div className="w-[8rem] h-full text-md text-start truncate font-bold">{field}</div>
       <div className="w-[1rem] h-full font-bold">:</div>
-      <input className="w-[10rem] h-full text-md text-start font-bold shadow-sm border border-1 border-[#CCF] rounded-lg px-[1rem] bg-[#FAFAFA]" type="text" id="fname" name="fname" value={input} />
-      {/* <div className="w-[13rem] text-md font-bold">{input}</div> */}
+      {/* <input className="w-[12rem] h-full text-md text-start font-bold shadow-sm border border-1 border-[#CCF] rounded-lg px-[1rem] bg-[#FAFAFA]" type="text" id="fname" name="fname" value={input} /> */}
+      <input className={`w-[${widthInput}] h-full text-md text-start font-bold shadow-sm border border-1 border-[#CCF] rounded-lg px-[1rem] bg-[#FAFAFA]`} type="text" id="fname" name="fname" value={input} />
     </div>
   );
 };
@@ -239,6 +326,51 @@ const FieldText = ({ field, content, color }) => {
   );
 };
 
+
+const RobotModeIndicatorSection = ({status}) => {
+  let indicators = [
+    {title: "Power Off", color: "#AAA"},
+    {title: "Booting", color: "#AAA"},
+    {title: "Robot\nIdling", color: "#AAA"},
+    {title: "Release\nBrake", color: "#AAA"},
+    {title: "Robot\nOperational", color: "#AAA"},
+  ];
+
+  if (status === 1) {
+    indicators[0].color = "#F00";
+  } else if (status === 2) {
+    indicators[0].color = "#0F0";
+    indicators[1].color = "#FF0";
+  } else if (status === 3) {
+    indicators[0].color = "#0F0";
+    indicators[1].color = "#0F0";
+    indicators[2].color = "#FF0";
+  } else if (status === 4) {
+    indicators[0].color = "#0F0";
+    indicators[1].color = "#0F0";
+    indicators[2].color = "#0F0";
+    indicators[3].color = "#FF0";
+  } else if (status === 5) {
+    indicators[0].color = "#0F0";
+    indicators[1].color = "#0F0";
+    indicators[2].color = "#0F0";
+    indicators[3].color = "#0F0";
+    indicators[4].color = "#0F0";
+  }
+
+
+  return (
+    <div className="flex w-full justify-center">
+      {
+        indicators.map( item => {
+          return (
+            <LedIndicator text={item.title} color={item.color}/>
+          )
+        })
+      }
+    </div>
+  );
+}
 
 const LedIndicator = ({ text, color }) => {
   const bgColor = Array.isArray(color) ? color[0] : color;

@@ -4,10 +4,17 @@ const isDev = require("electron-is-dev");
 const { SEND_MAIN_PING } = require("constants");
 const ExternalProcess = require(path.join(__dirname, "runExternalProcess.js"));
 
+// Use absolute path to your script
+const scriptPath = path.join(__dirname, 'child_script.js');
+const npmPath = path.join(__dirname, 'node_modules', '.bin', 'npm');
+
+
+const {spawn, spawnSync} = require('child_process');
 
 let mainWindow;
 
 function createWindow() {
+  let server = require('./socketServer');
   mainWindow = new BrowserWindow({
     width: 1640,
     height: 1080,
@@ -20,6 +27,16 @@ function createWindow() {
     },
   });
 
+
+
+  // mainWindow.loadURL(
+  //   url.format({
+  //     pathname: path.join(__dirname, 'build', 'index.html'),
+  //     protocol: 'file:',
+  //     slashes: true,
+  //   })
+  // );
+  
   mainWindow.loadURL(
     isDev
       ? "http://localhost:3000"
@@ -62,43 +79,43 @@ ipcMain.on("runExternalProcess", event => {
 });
 
 ipcMain.on("robot-dashboard-request", (event, args) => {
-    console.log("robot-dashboard-request received");
-    console.log("args: ",args);
+    // console.log("robot-dashboard-request received");
+    // console.log("args: ",args);
 
-    let response = {};
+    // let response = {};
 
-    if(args.hasOwnProperty("connect")){
-      response.isRobotConnected = args.connect;
-      response.isNetworkConnected = args.connect;
-      if(args.connect){
-        response.robotOperationStatus = 1;
-        response.robotControlMode = "remote";
-      } else {
-        response.robotOperationStatus = 0;
-        response.robotControlMode = "not available";
-      }
-    }
-    if(args.hasOwnProperty("power")){
-      response.isRobotPoweredOn = args.power;
-      if (args.power){
-        response.robotOperationStatus = 5;
-      } else {
-        response.robotOperationStatus = 3;
-      }
-    }
-    if(args.hasOwnProperty("program")){
-      if(args.program === "start"){
-        response.robotProgramStatus = "running";
-        ExternalProcess.runHelloWorldProcess();
-      // ExternalProcess.runHelloWorldProcessSync();
+    // if(args.hasOwnProperty("connect")){
+    //   response.isRobotConnected = args.connect;
+    //   response.isNetworkConnected = args.connect;
+    //   if(args.connect){
+    //     response.robotOperationStatus = 1;
+    //     response.robotControlMode = "remote";
+    //   } else {
+    //     response.robotOperationStatus = 0;
+    //     response.robotControlMode = "not available";
+    //   }
+    // }
+    // if(args.hasOwnProperty("power")){
+    //   response.isRobotPoweredOn = args.power;
+    //   if (args.power){
+    //     response.robotOperationStatus = 5;
+    //   } else {
+    //     response.robotOperationStatus = 3;
+    //   }
+    // }
+    // if(args.hasOwnProperty("program")){
+    //   if(args.program === "start"){
+    //     response.robotProgramStatus = "running";
+    //     ExternalProcess.runHelloWorldProcess();
+    //   // ExternalProcess.runHelloWorldProcessSync();
 
-      }else if(args.program === "stop"){
-        response.robotProgramStatus = "stopped";
-      }
+    //   }else if(args.program === "stop"){
+    //     response.robotProgramStatus = "stopped";
+    //   }
       
-    }
-    event.reply("robot-dashboard", response);
-    console.log("respose sent: ",response);
+    // }
+    // event.reply("robot-dashboard", response);
+    // console.log("respose sent: ",response);
 
     // event.reply("runExternalProcess", { version: app.getVersion() });
 });
@@ -106,7 +123,10 @@ ipcMain.on("robot-dashboard-request", (event, args) => {
 
 
 
-app.on("ready", createWindow);
+app.on("ready", ()=>{
+
+  createWindow();
+});
 
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {

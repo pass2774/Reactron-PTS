@@ -1,28 +1,17 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import logo from './logo.svg';
 import './App.css';
 import {SEND_MAIN_PING} from './constants'
 
+import io from 'socket.io-client';
+
 const {ipcRenderer} = window;
 
+const socket = io('http://localhost:3001', {
+  transports: ['websocket'],
+});
+
 function App() {
-
-  // const {ipcRenderer} = window.require('electron');
-  // const sendMain = () => {
-  //   // ipcRenderer.send(SEND_MAIN_PING, "Hello from React!")
-  // }
-
-  const [version, setVersion] = useState("123");
-  const [files, setFiles] = useState([]);
-
-  const [robotProfile, setRobotProfile] = useState({
-    "Robot Name": "KARI Robot 1",
-    "Hardware": "UR5e",
-    "First Installed": "2023-12-01",
-    "Serial Number": "xxx-xxx-xxxx-xxxx",
-    "MAC address": "xx:xx:xx:xx:xx:xx"
-  }); 
-
   const [robotOperationStatus, setRobotOperationStatus] = useState(0); //  Power Off,  Booting, Robot\nIdling, Release\nBrake, Robot\nOperational
   const [isNetworkConnected, setIsNetworkConnected] = useState(false);
   const [isRobotConnected, setIsRobotConnected] = useState(false);
@@ -34,28 +23,24 @@ function App() {
   const [serverEndpoint, setServerEndpoint] = useState("https://api.portal301.com");
   const [robotEndPoint, setRobotEndPoint] = useState("192.167.0.3");
 
+  console.log("app created");
+  const [messages, setMessages] = useState([]);
+  // const [messageInput, setMessageInput] = useState('');
+  const inputRef = useRef(null);
 
   useEffect(() => {
-    ipcRenderer.send("app_version");
+    // Use useEffect to run the setup only once when the component mounts
+    const handleChatMessage = (msg) => {
+      setMessages((prevMessages) => [...prevMessages, msg]);
+    };
+    console.log("useEffect")
 
-    ipcRenderer.on("app_version", (event, args) => {
-      setVersion(args.version);
-      console.log("args.version: ", args.version);
-    });
+    // Attach the event listener
+    socket.on('chat message', handleChatMessage);
 
-    ipcRenderer.on("hello", (event, args) => {
-      console.log("hello request received")
-      console.log(args)
-    });
-
-    ipcRenderer.on("files", (event, args) => {
-      setFiles(args.files);
-    });
-
-
-    ipcRenderer.on("robot-dashboard", (event, args) => {
-      console.log("robot-dashboard: ", args);
-
+    socket.on('robot-dashboard', (args) => {
+      console.log("robot-dashboard(socket): ", args);
+      
       if (args.hasOwnProperty("robotProfile")) {
         setRobotProfile(args.robotProfile);
       }
@@ -90,7 +75,104 @@ function App() {
         setSliderValue(args.speedSlider);
       }
 
-    })
+
+
+    });
+
+    // Cleanup: Remove the event listener when the component unmounts
+    return () => {
+      socket.off('chat message', handleChatMessage);
+    };
+  }, [socket]); // Run the effect when the socket instance changes (component mounts or unmounts)
+
+  const sendMessage = (e) => {
+    e.preventDefault();
+
+    // Access the value of the input directly using the ref
+    const messageInputValue = inputRef.current.value;
+
+    // Emit a 'chat message' event to the Socket.IO server
+    socket.emit('chat message', messageInputValue);
+
+    // Optionally, you can clear the input field
+    inputRef.current.value = '';
+  };
+
+
+  // const {ipcRenderer} = window.require('electron');
+  // const sendMain = () => {
+  //   // ipcRenderer.send(SEND_MAIN_PING, "Hello from React!")
+  // }
+
+  const [version, setVersion] = useState("123");
+  const [files, setFiles] = useState([]);
+
+  const [robotProfile, setRobotProfile] = useState({
+    "Robot Name": "KARI Robot 1",
+    "Hardware": "UR5e",
+    "First Installed": "2023-12-01",
+    "Serial Number": "xxx-xxx-xxxx-xxxx",
+    "MAC address": "xx:xx:xx:xx:xx:xx"
+  }); 
+
+
+
+  useEffect(() => {
+    ipcRenderer.send("app_version");
+
+    ipcRenderer.on("app_version", (event, args) => {
+      setVersion(args.version);
+      console.log("args.version: ", args.version);
+    });
+
+    // ipcRenderer.on("hello", (event, args) => {
+    //   console.log("hello request received")
+    //   console.log(args)
+    // });
+
+    // ipcRenderer.on("files", (event, args) => {
+    //   setFiles(args.files);
+    // });
+
+
+    // ipcRenderer.on("robot-dashboard", (event, args) => {
+    //   console.log("robot-dashboard: ", args);
+
+    //   if (args.hasOwnProperty("robotProfile")) {
+    //     setRobotProfile(args.robotProfile);
+    //   }
+    //   if (args.hasOwnProperty("isNetworkConnected")) {
+    //     setIsNetworkConnected(args.isNetworkConnected);
+    //   } 
+    //   if (args.hasOwnProperty("isRobotConnected")) {
+    //     setIsRobotConnected(args.isRobotConnected);
+    //   } 
+    //   if (args.hasOwnProperty("isRobotPoweredOn")) {
+    //     setIsRobotPoweredOn(args.isRobotPoweredOn);
+    //   }
+    //   if (args.hasOwnProperty("robotOperationStatus")) {
+    //     setRobotOperationStatus(args.robotOperationStatus);
+    //   } 
+    //   if (args.hasOwnProperty("robotControlMode")) {
+    //     setRobotControlMode(args.robotControlMode);
+    //   }
+    //   if (args.hasOwnProperty("robotProgramStatus")) {
+    //     setRobotProgramStatus(args.robotProgramStatus);
+    //     if (args.robotProgramStatus==="running") {
+    //       setStartingTime(new Date());
+    //       // setProgramState("running");
+    //     } else {
+    //       // setProgramState("stopped");
+    //     }
+    //     // setStartingTime(new Date());
+    //     // setIsRobotProgramRunning(true);
+    //     // setProgramState("running");
+    //   }
+    //   if (args.speedSlider) {
+    //     setSliderValue(args.speedSlider);
+    //   }
+
+    // })
   }, []);
 
 
@@ -101,6 +183,8 @@ function App() {
     setSelectedServer(e.target.value);
     setServerEndpoint(e.target.value === "aws" ? "https://api.portal301.com" : "http://localhost:8080")
   }
+
+  const sioHeader = "robot";
 
   const getTimeString = (time) => {
     const hours = time.getUTCHours().toString().padStart(2, '0');
@@ -124,39 +208,50 @@ function App() {
         }
       };
     console.log("connectionRequestForm: ", requestForm);
-    ipcRenderer.send("robot-dashboard-request", requestForm);
+    // ipcRenderer.send("robot-dashboard-request", requestForm);
+    socket.emit(sioHeader, requestForm);
   }
   const onDisconnectBtnClick = () => {
     const requestForm = {
         connect: false
       };
-    ipcRenderer.send("robot-dashboard-request",requestForm);
+    // ipcRenderer.send("robot-dashboard-request",requestForm);
+    socket.emit(sioHeader, requestForm);
+
   }
   const onPowerOnBtnClick = () => {
     const requestForm = {
         power: true
       };
 
-    ipcRenderer.send("robot-dashboard-request",requestForm);
+    // ipcRenderer.send("robot-dashboard-request",requestForm);
+    socket.emit(sioHeader, requestForm);
+
   }
   const onPowerOffBtnClick = () => {
     const requestForm = {
         power: false
       };
-    ipcRenderer.send("robot-dashboard-request",requestForm);
+    // ipcRenderer.send("robot-dashboard-request",requestForm);
+    socket.emit(sioHeader, requestForm);
+
   }
   const onStartProgramBtnClick = () => {
     const requestForm = {
         program: "start"
       };
-    ipcRenderer.send("robot-dashboard-request",requestForm);
+    // ipcRenderer.send("robot-dashboard-request",requestForm);
+    socket.emit(sioHeader, requestForm);
+
     console.log("onClickStartProgramBtn");
   }
   const onStopProgramBtnClick = () => {
     const requestForm = {
         program: "stop"
       };
-    ipcRenderer.send("robot-dashboard-request",requestForm);
+    // ipcRenderer.send("robot-dashboard-request",requestForm);
+    socket.emit(sioHeader, requestForm);
+
     console.log("onClickStopProgramBtn");
   }
 
@@ -184,6 +279,22 @@ function App() {
   return (
     <div className="App">
       <div className="bg-white w-full h-full flex flex-col items-center py-[1rem] px-[8rem]">
+        <form onSubmit={sendMessage}>
+                  <ul>
+                    {messages.map((msg, index) => (
+                      <li key={index}>{msg}</li>
+                    ))}
+                  </ul>
+                  <input
+                    type="text"
+                    className="bg-[green]"
+                    ref={inputRef}
+                    // No onChange event, so it won't trigger state updates on each keystroke
+                  />
+                  <button type="submit" className="bg-[yellow]">
+                    Send
+                  </button>
+                </form>
         <div className="flex">
           <SectionLevel1>
             <div className="text-3xl font-bold mb-[1rem] text-start w-full">System Configuration</div>

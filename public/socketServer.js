@@ -13,17 +13,41 @@ app.use(cors());
 const server = http.createServer(app);
 const io = socketIO(server);
 
+let roobtProfile={};
 
 app.get('/', function(req, res) {
   res.send("Hello world! Lala Seth is here!");
 });
 
 io.on('connection', (socket) => {
-  console.log('A user connected');
+  console.log('Client connected - id: ', socket.id);
 
   socket.on('chat message', (msg) => {
     console.log('Message:', msg);
     io.emit('chat message', msg);
+  });
+
+  socket.on('update-module-portal', (args) => {
+    console.log('socket message with update-module-portal header received')
+    console.log('args:', args);
+    response={};
+    if(args.hasOwnProperty("request")){
+      //convert string to json for args.profile
+      robotProfile = JSON.parse(args.profile);
+      response.robotProfile = robotProfile;
+    }
+    io.emit("robot-dashboard", response);    
+  });
+
+  socket.on('settings', (args) => {
+    console.log('socket message with settings header received')
+    console.log('args:', args);
+    response={};
+    if(args.hasOwnProperty("robotProfile")){
+      //convert string to json for args.profile
+      response.robotProfile = robotProfile;
+    }
+    io.emit("robot-dashboard", response);
   });
 
   socket.on('robot', (args) => {
@@ -62,6 +86,10 @@ io.on('connection', (socket) => {
       }
       
     }
+
+    
+
+
     // event.reply("robot-dashboard", response);
     io.emit("robot-dashboard", response);
     console.log("respose sent: ",response);
@@ -73,7 +101,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('disconnect', () => {
-    console.log('User disconnected');
+    console.log('User disconnected - id: ', socket.id);
   });
 });
 

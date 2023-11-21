@@ -28,12 +28,23 @@ function App() {
   // const [messageInput, setMessageInput] = useState('');
   const inputRef = useRef(null);
 
+  const [robotProfile, setRobotProfile] = useState({
+    "Robot Name": "KARI Robot 1",
+    "Hardware": "UR5e",
+    "Installed At": "2023-12-01",
+    "Serial Number": "xxx-xxx-xxxx-xxxx",
+    "MAC Address": "xx:xx:xx:xx:xx:xx"
+  }); 
+
+
   useEffect(() => {
     // Use useEffect to run the setup only once when the component mounts
     const handleChatMessage = (msg) => {
       setMessages((prevMessages) => [...prevMessages, msg]);
     };
     console.log("useEffect")
+
+    socket.emit('settings', {robotProfile: null});
 
     // Attach the event listener
     socket.on('chat message', handleChatMessage);
@@ -42,8 +53,30 @@ function App() {
       console.log("robot-dashboard(socket): ", args);
       
       if (args.hasOwnProperty("robotProfile")) {
-        setRobotProfile(args.robotProfile);
+        let profile = {};
+        if(args.robotProfile.hasOwnProperty("alias")){
+          profile["Robot Name"] = args.robotProfile.alias;
+        }
+        if(args.robotProfile.hasOwnProperty("hardware")){
+          profile["Hardware"] = args.robotProfile.hardware;
+        }
+        if(args.robotProfile.hasOwnProperty("serialNumber")){
+          profile["Serial Number"] = args.robotProfile.serialNumber;
+        }
+        if(args.robotProfile.hasOwnProperty("serialNumber")){
+          profile["MAC Address"] = args.robotProfile.serialNumber;
+        }
+        if(args.robotProfile.hasOwnProperty("createdAt")){
+          profile["Installed At"] = args.robotProfile.createdAt;
+        }
+        setRobotProfile(profile);
       }
+      // for(let key in robotProfile){
+      //   if(args.robotProfile.hasOwnProperty(key)){
+      //     profile[key] = args.robotProfile[key];
+      //   }
+      // }
+
       if (args.hasOwnProperty("isNetworkConnected")) {
         setIsNetworkConnected(args.isNetworkConnected);
       } 
@@ -107,13 +140,6 @@ function App() {
   const [version, setVersion] = useState("123");
   const [files, setFiles] = useState([]);
 
-  const [robotProfile, setRobotProfile] = useState({
-    "Robot Name": "KARI Robot 1",
-    "Hardware": "UR5e",
-    "First Installed": "2023-12-01",
-    "Serial Number": "xxx-xxx-xxxx-xxxx",
-    "MAC address": "xx:xx:xx:xx:xx:xx"
-  }); 
 
 
 

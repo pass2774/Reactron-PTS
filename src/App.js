@@ -5,6 +5,17 @@ import {SEND_MAIN_PING} from './constants'
 
 import io from 'socket.io-client';
 
+const ROBOT_OPERATION_STATUS_UNKNOWN = 0;
+const ROBOT_OPERATION_STATUS_POWER_OFF = 1;
+const ROBOT_OPERATION_STATUS_POWER_ON = 2;
+const ROBOT_OPERATION_STATUS_BOOTING = 3;
+const ROBOT_OPERATION_STATUS_ROBOT_IDLING = 4;
+const ROBOT_OPERATION_STATUS_RELEASING_BRAKE = 5;
+const ROBOT_OPERATION_STATUS_ROBOT_OPERATIONAL = 6;
+
+
+
+
 const {ipcRenderer} = window;
 
 const socket = io('http://localhost:3001', {
@@ -16,12 +27,13 @@ function App() {
   const [isNetworkConnected, setIsNetworkConnected] = useState(false);
   const [isRobotConnected, setIsRobotConnected] = useState(false);
   const [isRobotPoweredOn, setIsRobotPoweredOn] = useState(false);
-  const [robotProgramStatus, setRobotProgramStatus] = useState("not available"); // ["Unknown","running", "stopped", "paused"]
+  const [robotProgramStatus, setRobotProgramStatus] = useState("Not Available"); // ["Not Available","Running", "Stopped", "Initializing"]
   const [robotControlMode, setRobotControlMode] = useState("not available"); // ["Unknown","remote", "local"]
 
   const [selectedServer, setSelectedServer] = useState("aws");
   const [serverEndpoint, setServerEndpoint] = useState("https://api.portal301.com");
-  const [robotEndPoint, setRobotEndPoint] = useState("192.167.0.3");
+  // const [robotEndPoint, setRobotEndPoint] = useState("192.167.0.3");
+  const [robotEndPoint, setRobotEndPoint] = useState("192.168.0.68");
 
   console.log("app created");
   const [messages, setMessages] = useState([]);
@@ -83,18 +95,25 @@ function App() {
       if (args.hasOwnProperty("isRobotConnected")) {
         setIsRobotConnected(args.isRobotConnected);
       } 
-      if (args.hasOwnProperty("isRobotPoweredOn")) {
-        setIsRobotPoweredOn(args.isRobotPoweredOn);
-      }
+      // if (args.hasOwnProperty("isRobotPoweredOn")) {
+      //   setIsRobotPoweredOn(args.isRobotPoweredOn);
+      // }
       if (args.hasOwnProperty("robotOperationStatus")) {
         setRobotOperationStatus(args.robotOperationStatus);
+        if(args.robotOperationStatus > ROBOT_OPERATION_STATUS_POWER_OFF){
+          setIsRobotPoweredOn(true);
+          console.log("setIsRobotPoweredOn(true)");
+        }else{
+          setIsRobotPoweredOn(false);
+          console.log("setIsRobotPoweredOn(false)");
+        }
       } 
       if (args.hasOwnProperty("robotControlMode")) {
         setRobotControlMode(args.robotControlMode);
       }
       if (args.hasOwnProperty("robotProgramStatus")) {
         setRobotProgramStatus(args.robotProgramStatus);
-        if (args.robotProgramStatus==="running") {
+        if (args.robotProgramStatus==="Running") {
           setStartingTime(new Date());
           // setProgramState("running");
         } else {
@@ -141,8 +160,6 @@ function App() {
   const [files, setFiles] = useState([]);
 
 
-
-
   useEffect(() => {
     ipcRenderer.send("app_version");
 
@@ -151,54 +168,16 @@ function App() {
       console.log("args.version: ", args.version);
     });
 
-    // ipcRenderer.on("hello", (event, args) => {
-    //   console.log("hello request received")
-    //   console.log(args)
-    // });
-
     // ipcRenderer.on("files", (event, args) => {
     //   setFiles(args.files);
     // });
 
-
-    // ipcRenderer.on("robot-dashboard", (event, args) => {
-    //   console.log("robot-dashboard: ", args);
-
-    //   if (args.hasOwnProperty("robotProfile")) {
-    //     setRobotProfile(args.robotProfile);
-    //   }
-    //   if (args.hasOwnProperty("isNetworkConnected")) {
-    //     setIsNetworkConnected(args.isNetworkConnected);
-    //   } 
-    //   if (args.hasOwnProperty("isRobotConnected")) {
-    //     setIsRobotConnected(args.isRobotConnected);
-    //   } 
-    //   if (args.hasOwnProperty("isRobotPoweredOn")) {
-    //     setIsRobotPoweredOn(args.isRobotPoweredOn);
-    //   }
-    //   if (args.hasOwnProperty("robotOperationStatus")) {
-    //     setRobotOperationStatus(args.robotOperationStatus);
-    //   } 
-    //   if (args.hasOwnProperty("robotControlMode")) {
-    //     setRobotControlMode(args.robotControlMode);
-    //   }
-    //   if (args.hasOwnProperty("robotProgramStatus")) {
-    //     setRobotProgramStatus(args.robotProgramStatus);
-    //     if (args.robotProgramStatus==="running") {
-    //       setStartingTime(new Date());
-    //       // setProgramState("running");
-    //     } else {
-    //       // setProgramState("stopped");
-    //     }
-    //     // setStartingTime(new Date());
-    //     // setIsRobotProgramRunning(true);
-    //     // setProgramState("running");
-    //   }
-    //   if (args.speedSlider) {
-    //     setSliderValue(args.speedSlider);
-    //   }
-
-    // })
+    ipcRenderer.on("robot-dashboard", (event, args) => {
+      console.log("robot-dashboard: ", args);
+      if (args.hasOwnProperty("robotProfile")) {
+        setRobotProfile(args.robotProfile);
+      }
+    })
   }, []);
 
 
@@ -234,14 +213,13 @@ function App() {
         }
       };
     console.log("connectionRequestForm: ", requestForm);
-    // ipcRenderer.send("robot-dashboard-request", requestForm);
+    ipcRenderer.send("robot-dashboard-request", requestForm);
     socket.emit(sioHeader, requestForm);
   }
   const onDisconnectBtnClick = () => {
     const requestForm = {
         connect: false
       };
-    // ipcRenderer.send("robot-dashboard-request",requestForm);
     socket.emit(sioHeader, requestForm);
 
   }
@@ -250,7 +228,6 @@ function App() {
         power: true
       };
 
-    // ipcRenderer.send("robot-dashboard-request",requestForm);
     socket.emit(sioHeader, requestForm);
 
   }
@@ -258,7 +235,6 @@ function App() {
     const requestForm = {
         power: false
       };
-    // ipcRenderer.send("robot-dashboard-request",requestForm);
     socket.emit(sioHeader, requestForm);
 
   }
@@ -266,19 +242,13 @@ function App() {
     const requestForm = {
         program: "start"
       };
-    // ipcRenderer.send("robot-dashboard-request",requestForm);
     socket.emit(sioHeader, requestForm);
-
-    console.log("onClickStartProgramBtn");
   }
   const onStopProgramBtnClick = () => {
     const requestForm = {
         program: "stop"
       };
-    // ipcRenderer.send("robot-dashboard-request",requestForm);
     socket.emit(sioHeader, requestForm);
-
-    console.log("onClickStopProgramBtn");
   }
 
   const [startingTime, setStartingTime] = useState(new Date(0));
@@ -286,7 +256,7 @@ function App() {
   
   useEffect(() => {
     const interval = setInterval(() => {
-      if (robotProgramStatus === "running") {
+      if (robotProgramStatus === "Running") {
         const currentTime = new Date();
         setRunningTime(new Date(currentTime - startingTime));
       }
@@ -300,6 +270,13 @@ function App() {
 
   const handleSliderChange = (event) => {
     setSliderValue(event.target.value);
+    const requestForm = {
+      io: {
+        speedSlider: parseFloat(event.target.value)/100.0
+      }
+    };
+    console.log("speedSlider: ", requestForm);
+    socket.emit(sioHeader, requestForm);
   };
 
   return (
@@ -412,7 +389,7 @@ function App() {
 
                   </div>
 
-                  <SectionLevel2 title="Program" className="w-[30rem] ml-[2rem]" enable={isRobotConnected && isRobotPoweredOn}>
+                  <SectionLevel2 title="Program" className="w-[30rem] ml-[2rem]" enable={isRobotConnected && robotOperationStatus === ROBOT_OPERATION_STATUS_ROBOT_OPERATIONAL}>
                     <div className="w-full pl-[1rem]">
                       <FieldText field="Name" content="ContinuousServoJ" />
                       <FieldText field="Version" content="1.1.0" />
@@ -436,8 +413,8 @@ function App() {
                     </div>
                     <div className="mt-[2rem]">
                     {/* <CustomButton title="Start" onClick={onStartProgramBtnClick} isButtonDisabled={((!isRobotConnected) || (!isRobotPoweredOn)) && (robotProgramStatus === "running")}/> */}
-                    <CustomButton title="Start" onClick={onStartProgramBtnClick} isButtonEnabled={(isRobotConnected && isRobotPoweredOn) && !(robotProgramStatus === "running")}/>
-                      <CustomButton title="Stop" onClick={onStopProgramBtnClick} isButtonEnabled={(isRobotConnected && isRobotPoweredOn) && (robotProgramStatus === "running")}/>
+                    <CustomButton title="Start" onClick={onStartProgramBtnClick} isButtonEnabled={(isRobotConnected && isRobotPoweredOn) && (robotProgramStatus === "Stopped")}/>
+                      <CustomButton title="Stop" onClick={onStopProgramBtnClick} isButtonEnabled={(isRobotConnected && isRobotPoweredOn) && (robotProgramStatus === "Running")}/>
                     </div>
 
                   </SectionLevel2>
@@ -464,10 +441,27 @@ function App() {
 }
 
 const CustomButton = ({ title, onClick, isButtonEnabled=true, themeColor}) => {
+  const [isButtonDisabled, setButtonDisabled] = useState(false);
+
+  const handleClickHysteresis = () => {
+    onClick();
+    setButtonDisabled(true);
+    setTimeout(() => {
+      setButtonDisabled(false);
+    }, 1000);
+  };
+
+  useEffect(() => {
+    // Cleanup: Make sure to enable the button when the component unmounts
+    return () => {
+      setButtonDisabled(false);
+    };
+  }, []);
+
   return (
     <button 
-      onClick={onClick}
-      disabled={!isButtonEnabled}
+      onClick={handleClickHysteresis}
+      disabled={!isButtonEnabled || isButtonDisabled}
       className={`w-[10rem] h-[5rem] font-bold py-2 px-4 rounded text-white
       ${themeColor==='darkblue'
         ? 'bg-blue-900 hover:bg-blue-700'
@@ -475,7 +469,7 @@ const CustomButton = ({ title, onClick, isButtonEnabled=true, themeColor}) => {
         ? 'bg-red-500 hover:bg-red-700'
         : 'bg-blue-500 hover:bg-blue-700' }
 
-      ${!isButtonEnabled ? 'opacity-20 cursor-not-allowed' : ''}
+      ${(!isButtonEnabled || isButtonDisabled) ? 'opacity-20 cursor-not-allowed' : ''}
       `}
     >
       {title}
@@ -553,8 +547,8 @@ const RobotModeIndicatorSection = ({status}) => {
   let indicators = [
     {title: "Power Off", color: "#AAA"},
     {title: "Booting", color: "#AAA"},
-    {title: "Robot\nIdling", color: "#AAA"},
-    {title: "Release\nBrake", color: "#AAA"},
+    {title: "Robot\nActive", color: "#AAA"},
+    {title: "Releasing\nBrake", color: "#AAA"},
     {title: "Robot\nOperational", color: "#AAA"},
   ];
 
@@ -562,17 +556,19 @@ const RobotModeIndicatorSection = ({status}) => {
     indicators[0].color = "#F00";
   } else if (status === 2) {
     indicators[0].color = "#0F0";
-    indicators[1].color = "#FF0";
   } else if (status === 3) {
+    indicators[0].color = "#0F0";
+    indicators[1].color = "#FF0";
+  } else if (status === 4) {
     indicators[0].color = "#0F0";
     indicators[1].color = "#0F0";
     indicators[2].color = "#FF0";
-  } else if (status === 4) {
+  } else if (status === 5) {
     indicators[0].color = "#0F0";
     indicators[1].color = "#0F0";
     indicators[2].color = "#0F0";
     indicators[3].color = "#FF0";
-  } else if (status === 5) {
+  } else if (status === 6) {
     indicators[0].color = "#0F0";
     indicators[1].color = "#0F0";
     indicators[2].color = "#0F0";

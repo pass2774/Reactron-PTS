@@ -13,13 +13,19 @@ app.use(cors());
 const server = http.createServer(app);
 const io = socketIO(server);
 
-let roobtProfile={};
+
+let robotProfile={
+  "alias": "robot1",
+  "serialNumber": "1234567890",
+  "createdAt":"today" 
+}
 
 app.get('/', function(req, res) {
   res.send("Hello world! Lala Seth is here!");
 });
 
 io.on('connection', (socket) => {
+
   console.log('Client connected - id: ', socket.id);
 
   socket.on('chat message', (msg) => {
@@ -50,49 +56,56 @@ io.on('connection', (socket) => {
     io.emit("robot-dashboard", response);
   });
 
+  socket.on('dashboard', (args) => {
+    io.emit("robot-dashboard", args);
+
+  });
+
   socket.on('robot', (args) => {
     console.log('socket message with robot header received')
     console.log('robot:', args);
 
+    io.emit("robot", "dashboard",args);
+
     let response = {};
 
-    if(args.hasOwnProperty("connect")){
-      response.isRobotConnected = args.connect;
-      response.isNetworkConnected = args.connect;
-      if(args.connect){
-        response.robotOperationStatus = 1;
-        response.robotControlMode = "remote";
-      } else {
-        response.robotOperationStatus = 0;
-        response.robotControlMode = "not available";
-      }
-    }
-    if(args.hasOwnProperty("power")){
-      response.isRobotPoweredOn = args.power;
-      if (args.power){
-        response.robotOperationStatus = 5;
-      } else {
-        response.robotOperationStatus = 3;
-      }
-    }
-    if(args.hasOwnProperty("program")){
-      if(args.program === "start"){
-        response.robotProgramStatus = "running";
-        ExternalProcess.runHelloWorldProcess();
-      // ExternalProcess.runHelloWorldProcessSync();
+    // if(args.hasOwnProperty("connect")){
+    //   response.isRobotConnected = args.connect;
+    //   response.isNetworkConnected = args.connect;
+    //   if(args.connect){
+    //     response.robotOperationStatus = 1;
+    //     response.robotControlMode = "remote";
+    //   } else {
+    //     response.robotOperationStatus = 0;
+    //     response.robotControlMode = "not available";
+    //   }
+    // }
+    // if(args.hasOwnProperty("power")){
+    //   response.isRobotPoweredOn = args.power;
+    //   if (args.power){
+    //     response.robotOperationStatus = 5;
+    //   } else {
+    //     response.robotOperationStatus = 3;
+    //   }
+    // }
+    // if(args.hasOwnProperty("program")){
+    //   if(args.program === "start"){
+    //     response.robotProgramStatus = "running";
+    //     ExternalProcess.runHelloWorldProcess();
+    //   // ExternalProcess.runHelloWorldProcessSync();
 
-      }else if(args.program === "stop"){
-        response.robotProgramStatus = "stopped";
-      }
+    //   }else if(args.program === "stop"){
+    //     response.robotProgramStatus = "stopped";
+    //   }
       
-    }
+    // }
 
     
 
 
-    // event.reply("robot-dashboard", response);
-    io.emit("robot-dashboard", response);
-    console.log("respose sent: ",response);
+    // // event.reply("robot-dashboard", response);
+    // io.emit("robot-dashboard", response);
+    // console.log("respose sent: ",response);
 
 
 

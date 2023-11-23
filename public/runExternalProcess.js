@@ -121,8 +121,35 @@ robot-error-message (string)
     });
   }
 
+  function runRobotProcess(endpoint) {
+    console.log('endpoint.robot: ',endpoint.robot);
+    console.log('endpoint.network: ',endpoint.network);
+    const args = ['-r',endpoint.robot, '-s',endpoint.network];
+    console.log('args=',args);
+    const subprocess = spawn(path.join(__dirname, "remoteRobot.exe"),args,{
+      shell: true,
+      stdio: ['pipe', 'pipe', 'pipe']
+    });
+    subprocess.unref();
+    subprocess.stdout.setEncoding('utf8');
+    subprocess.stderr.setEncoding('utf8');
+  
+    subprocess.stdout.on('data', (data) => {
+      console.log(`stdout: ${data}`);
+    });
+    subprocess.stderr.on('data', (data) => {
+      console.error(`stderr: ${data}`);
+    });
+    console.log('Spawned remoteRobot.exe... as a child process of electron');
+    
+    subprocess.on('close', (code) => {
+      console.log(`remoteRobot.exe completed with code ${code}`);
+    });
+  }
+
   // export default runHelloWorldProcess;
   module.exports={
+    runRobotProcess,
     runHelloWorldProcess,
     runHelloWorldProcessSync
   }

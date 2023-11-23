@@ -79,45 +79,24 @@ ipcMain.on("runExternalProcess", event => {
 });
 
 ipcMain.on("robot-dashboard-request", (event, args) => {
-    // console.log("robot-dashboard-request received");
-    // console.log("args: ",args);
+    console.log("robot-dashboard-request received");
+    console.log("args: ",args);
+    let response = {};
+    if(args.hasOwnProperty("connect")){
+      if (args.connect){
+        ExternalProcess.runRobotProcess(args.endpoint);
+        // response.robotOperationStatus = 1;
+        response.robotControlMode = "remote";
+      } else {
+        // response.robotOperationStatus = 0;
+        response.robotControlMode = "Not Available";
+      }
+    }
 
-    // let response = {};
+    event.reply("robot-dashboard", response);
+    console.log("respose sent: ",response);
 
-    // if(args.hasOwnProperty("connect")){
-    //   response.isRobotConnected = args.connect;
-    //   response.isNetworkConnected = args.connect;
-    //   if(args.connect){
-    //     response.robotOperationStatus = 1;
-    //     response.robotControlMode = "remote";
-    //   } else {
-    //     response.robotOperationStatus = 0;
-    //     response.robotControlMode = "not available";
-    //   }
-    // }
-    // if(args.hasOwnProperty("power")){
-    //   response.isRobotPoweredOn = args.power;
-    //   if (args.power){
-    //     response.robotOperationStatus = 5;
-    //   } else {
-    //     response.robotOperationStatus = 3;
-    //   }
-    // }
-    // if(args.hasOwnProperty("program")){
-    //   if(args.program === "start"){
-    //     response.robotProgramStatus = "running";
-    //     ExternalProcess.runHelloWorldProcess();
-    //   // ExternalProcess.runHelloWorldProcessSync();
-
-    //   }else if(args.program === "stop"){
-    //     response.robotProgramStatus = "stopped";
-    //   }
-      
-    // }
-    // event.reply("robot-dashboard", response);
-    // console.log("respose sent: ",response);
-
-    // event.reply("runExternalProcess", { version: app.getVersion() });
+    event.reply("runExternalProcess", { version: app.getVersion() });
 });
 
 

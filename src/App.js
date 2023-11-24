@@ -7,14 +7,8 @@ import { CustomButton, SectionLevel1, SectionLevel2, FieldSelector, FieldInput, 
 
 import io from 'socket.io-client';
 
-const ROBOT_OPERATION_STATUS_UNKNOWN = 0;
-const ROBOT_OPERATION_STATUS_POWER_OFF = 1;
-const ROBOT_OPERATION_STATUS_POWER_ON = 2;
-const ROBOT_OPERATION_STATUS_BOOTING = 3;
-const ROBOT_OPERATION_STATUS_ROBOT_IDLING = 4;
-const ROBOT_OPERATION_STATUS_RELEASING_BRAKE = 5;
-const ROBOT_OPERATION_STATUS_ROBOT_OPERATIONAL = 6;
 
+import moduleProfile from './config/moduleProfile.json';
 
 
 
@@ -25,12 +19,6 @@ const socket = io('http://localhost:3001', {
 });
 
 function App() {
-  const [robotOperationStatus, setRobotOperationStatus] = useState(0); //  Power Off,  Booting, Robot\nIdling, Release\nBrake, Robot\nOperational
-  const [isNetworkConnected, setIsNetworkConnected] = useState(false);
-  const [isRobotConnected, setIsRobotConnected] = useState(false);
-  const [isRobotPoweredOn, setIsRobotPoweredOn] = useState(false);
-  const [robotProgramStatus, setRobotProgramStatus] = useState("Not Available"); // ["Not Available","Running", "Stopped", "Initializing"]
-  const [robotControlMode, setRobotControlMode] = useState("not available"); // ["Unknown","remote", "local"]
 
   const [selectedServer, setSelectedServer] = useState("aws");
   const [serverEndpoint, setServerEndpoint] = useState("https://api.portal301.com");
@@ -63,73 +51,15 @@ function App() {
     // Attach the event listener
     socket.on('chat message', handleChatMessage);
 
-    socket.on('robot-dashboard', (args) => {
+    socket.on('robot-dashboard2', (args) => {
       console.log("robot-dashboard(socket): ", args);
       
-      if (args.hasOwnProperty("robotProfile")) {
-        let profile = {};
-        if(args.robotProfile.hasOwnProperty("alias")){
-          profile["Robot Name"] = args.robotProfile.alias;
-        }
-        if(args.robotProfile.hasOwnProperty("hardware")){
-          profile["Hardware"] = args.robotProfile.hardware;
-        }
-        if(args.robotProfile.hasOwnProperty("serialNumber")){
-          profile["Serial Number"] = args.robotProfile.serialNumber;
-        }
-        if(args.robotProfile.hasOwnProperty("serialNumber")){
-          profile["MAC Address"] = args.robotProfile.serialNumber;
-        }
-        if(args.robotProfile.hasOwnProperty("createdAt")){
-          profile["Installed At"] = args.robotProfile.createdAt;
-        }
-        setRobotProfile(profile);
-      }
+
       // for(let key in robotProfile){
       //   if(args.robotProfile.hasOwnProperty(key)){
       //     profile[key] = args.robotProfile[key];
       //   }
       // }
-
-      if (args.hasOwnProperty("isNetworkConnected")) {
-        setIsNetworkConnected(args.isNetworkConnected);
-      } 
-      if (args.hasOwnProperty("isRobotConnected")) {
-        setIsRobotConnected(args.isRobotConnected);
-      } 
-      // if (args.hasOwnProperty("isRobotPoweredOn")) {
-      //   setIsRobotPoweredOn(args.isRobotPoweredOn);
-      // }
-      if (args.hasOwnProperty("robotOperationStatus")) {
-        setRobotOperationStatus(args.robotOperationStatus);
-        if(args.robotOperationStatus > ROBOT_OPERATION_STATUS_POWER_OFF){
-          setIsRobotPoweredOn(true);
-          console.log("setIsRobotPoweredOn(true)");
-        }else{
-          setIsRobotPoweredOn(false);
-          console.log("setIsRobotPoweredOn(false)");
-        }
-      } 
-      if (args.hasOwnProperty("robotControlMode")) {
-        setRobotControlMode(args.robotControlMode);
-      }
-      if (args.hasOwnProperty("robotProgramStatus")) {
-        setRobotProgramStatus(args.robotProgramStatus);
-        if (args.robotProgramStatus==="Running") {
-          setStartingTime(new Date());
-          // setProgramState("running");
-        } else {
-          // setProgramState("stopped");
-        }
-        // setStartingTime(new Date());
-        // setIsRobotProgramRunning(true);
-        // setProgramState("running");
-      }
-      if (args.speedSlider) {
-        setSliderValue(args.speedSlider);
-      }
-
-
 
     });
 
@@ -160,7 +90,45 @@ function App() {
 
   const [version, setVersion] = useState("123");
   const [files, setFiles] = useState([]);
+  // const fs = require('fs');
 
+  // // Asynchronous read
+  // // fs.readFile('./conifg/moduleProfile.txt', 'utf8', (err, data) => {
+  // //   if (err) {
+  // //     console.error('Error reading the file:', err);
+  // //     return;
+  // //   }
+  // //   const jsonData = JSON.parse(data);
+  // //   console.log(jsonData);
+  // // });
+  
+  // // Synchronous read
+  // try {
+  //   const data = fs.readFileSync('./conifg/moduleProfile.txt', 'utf8');
+  //   const jsonData = JSON.parse(data);
+  //   console.log(jsonData);
+  // } catch (err) {
+  //   console.error('Error reading the file:', err);
+  // }
+  // fetch('./conifg/moduleProfile.txt')
+  // .then(response => {
+  //   if (!response.ok) {
+  //     throw new Error(`HTTP error! Status: ${response.status}`);
+  //   }
+  //   console.log("response.ok")
+  //   console.log(response)
+  //   return true;
+  //   // return response.json(); // Assuming the content of data.txt is a valid JSON
+  // })
+  // .then(data => {
+  //   // Handle the JSON data
+  //   console.log("handling json data")
+  //   console.log(data);
+  // })
+  // .catch(error => {
+  //   console.error('Error fetching the file:', error);
+  // });
+  console.log("moduleProfile: ", moduleProfile);
 
   useEffect(() => {
     ipcRenderer.send("app_version");
@@ -177,7 +145,23 @@ function App() {
     ipcRenderer.on("robot-dashboard", (event, args) => {
       console.log("robot-dashboard: ", args);
       if (args.hasOwnProperty("robotProfile")) {
-        setRobotProfile(args.robotProfile);
+        let profile = {};
+        if(args.robotProfile.hasOwnProperty("alias")){
+          profile["Robot Name"] = args.robotProfile.alias;
+        }
+        if(args.robotProfile.hasOwnProperty("hardware")){
+          profile["Hardware"] = args.robotProfile.hardware;
+        }
+        if(args.robotProfile.hasOwnProperty("serialNumber")){
+          profile["Serial Number"] = args.robotProfile.serialNumber;
+        }
+        if(args.robotProfile.hasOwnProperty("serialNumber")){
+          profile["MAC Address"] = args.robotProfile.serialNumber;
+        }
+        if(args.robotProfile.hasOwnProperty("createdAt")){
+          profile["Installed At"] = args.robotProfile.createdAt;
+        }
+        setRobotProfile(profile);
       }
     })
   }, []);
@@ -191,95 +175,12 @@ function App() {
     setServerEndpoint(e.target.value === "aws" ? "https://api.portal301.com" : "http://localhost:8080")
   }
 
-  const sioHeader = "robot";
-
-  const getTimeString = (time) => {
-    const hours = time.getUTCHours().toString().padStart(2, '0');
-    const minutes = time.getUTCMinutes().toString().padStart(2, '0');
-    const seconds = time.getUTCSeconds().toString().padStart(2, '0');
-    
-
-    return `${hours}:${minutes}:${seconds}`;
-  }
 
   const onStartStreammingBtnClick = () => {
     ipcRenderer.send("runExternalProcess");
   }
 
-  const onConnectBtnClick = () => {
-    const requestForm = {
-        connect: true,
-        endpoint: {
-          network: serverEndpoint,
-          robot: robotEndPoint  
-        }
-      };
-    console.log("connectionRequestForm: ", requestForm);
-    ipcRenderer.send("robot-dashboard-request", requestForm);
-    socket.emit(sioHeader, requestForm);
-  }
-  const onDisconnectBtnClick = () => {
-    const requestForm = {
-        connect: false
-      };
-    socket.emit(sioHeader, requestForm);
 
-  }
-  const onPowerOnBtnClick = () => {
-    const requestForm = {
-        power: true
-      };
-
-    socket.emit(sioHeader, requestForm);
-
-  }
-  const onPowerOffBtnClick = () => {
-    const requestForm = {
-        power: false
-      };
-    socket.emit(sioHeader, requestForm);
-
-  }
-  const onStartProgramBtnClick = () => {
-    const requestForm = {
-        program: "start"
-      };
-    socket.emit(sioHeader, requestForm);
-  }
-  const onStopProgramBtnClick = () => {
-    const requestForm = {
-        program: "stop"
-      };
-    socket.emit(sioHeader, requestForm);
-  }
-
-  const [startingTime, setStartingTime] = useState(new Date(0));
-  const [elapsedTime, setRunningTime] = useState(new Date(0));
-  
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (robotProgramStatus === "Running") {
-        const currentTime = new Date();
-        setRunningTime(new Date(currentTime - startingTime));
-      }
-      return;
-    }, 1000);
-  
-    return () => clearInterval(interval);
-  }, [robotProgramStatus, elapsedTime, startingTime]);
-
-  const [sliderValue, setSliderValue] = useState(50);
-
-  const handleSliderChange = (event) => {
-    setSliderValue(event.target.value);
-    const requestForm = {
-      io: {
-        speedSlider: parseFloat(event.target.value)/100.0
-      }
-    };
-    console.log("speedSlider: ", requestForm);
-    socket.emit(sioHeader, requestForm);
-  };
 
   return (
     <div className="App">
@@ -362,86 +263,242 @@ function App() {
               </div>
             </SectionLevel1>
 
-            <SectionLevel1>
-              <div className = "flex flex-col items-center w-[70rem]">
-                <div className="flex">
-                  <div className="flex flex-col items-center w-[30rem]">
-                  <SectionLevel2 title="Connection" className="w-[30rem]">
-                    <div className="w-full pl-[1rem]">
-                      <FieldText field="Network" content={isNetworkConnected?"Connected":"Disconnected"} />
-                      <FieldText field="Robot" content={isRobotConnected?"Connected":"Disconnected"} />
-                    </div>
-                    <div className="w-full mt-[1rem] flex justify-center">
-                      <CustomButton title="Connect" onClick={onConnectBtnClick} isButtonEnabled={!isRobotConnected}/>
-                      <CustomButton title="Disconnect" onClick={onDisconnectBtnClick} isButtonEnabled={isRobotConnected}/>
-                    </div>
-                    </SectionLevel2>
-                    <SectionLevel2 title="Operation Status" className="w-[30rem] mt-[2rem]" enable={isRobotConnected}>
-                      <div className = "mt-[1rem]">
-                        <RobotModeIndicatorSection status={robotOperationStatus}/>
-                        <div className = "flex justify-center pl-[3rem] mt-[1rem]">
-                          <FieldText field="Control Mode" content={robotControlMode} />
-                        </div>
-                        <div className="mt-[1rem]">
-                          <CustomButton title="Power On" onClick={onPowerOnBtnClick} isButtonEnabled={isRobotConnected && !isRobotPoweredOn}/>
-                          <CustomButton title="Power Off" onClick={onPowerOffBtnClick} isButtonEnabled={isRobotConnected  && isRobotPoweredOn}/>
-                        </div>
-                      </div>
-                    </SectionLevel2>
 
-                  </div>
-
-                  <SectionLevel2 title="Program" className="w-[30rem] ml-[2rem]" enable={isRobotConnected && robotOperationStatus === ROBOT_OPERATION_STATUS_ROBOT_OPERATIONAL}>
-                    <div className="w-full pl-[1rem]">
-                      <FieldText field="Name" content="ContinuousServoJ" />
-                      <FieldText field="Version" content="1.1.0" />
-                      <FieldText field="Status" content={robotProgramStatus} />
-                      <FieldText field="Starting Time" content={getTimeString(startingTime)} />
-                      <FieldText field="Running Time" content={getTimeString(elapsedTime)} />
-                      <div className="mt-[2rem]">
-                        <FieldText field="Speed Slider" content={`${sliderValue} %`} />
-                        <input
-                          type="range"
-                          id="slider"
-                          min="0"
-                          max="100"
-                          step="1"
-                          value={sliderValue}
-                          onChange={handleSliderChange}
-                          className="w-[24rem] mt-[0.5rem]"
-                        />
-                      </div>
-
-                    </div>
-                    <div className="mt-[2rem]">
-                    {/* <CustomButton title="Start" onClick={onStartProgramBtnClick} isButtonDisabled={((!isRobotConnected) || (!isRobotPoweredOn)) && (robotProgramStatus === "running")}/> */}
-                    <CustomButton title="Start" onClick={onStartProgramBtnClick} isButtonEnabled={(isRobotConnected && isRobotPoweredOn) && (robotProgramStatus === "Stopped")}/>
-                      <CustomButton title="Stop" onClick={onStopProgramBtnClick} isButtonEnabled={(isRobotConnected && isRobotPoweredOn) && (robotProgramStatus === "Running")}/>
-                    </div>
-
-                  </SectionLevel2>
-                </div>
-
-              </div>
-              </SectionLevel1>
-            </div>
-
+            <RobotSection endpoint={{server:serverEndpoint, robot:robotEndPoint}}/>
           </div>
-        {/* <img src={logo} className="App-logo" alt="logo" />
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a> */}
-      </div>
 
+        </div>
+      </div>
     </div>
   );
 }
 
+const RobotSection = ({endpoint}) => {
+  const ROBOT_OPERATION_STATUS_UNKNOWN = 0;
+  const ROBOT_OPERATION_STATUS_POWER_OFF = 1;
+  const ROBOT_OPERATION_STATUS_POWER_ON = 2;
+  const ROBOT_OPERATION_STATUS_BOOTING = 3;
+  const ROBOT_OPERATION_STATUS_ROBOT_IDLING = 4;
+  const ROBOT_OPERATION_STATUS_RELEASING_BRAKE = 5;
+  const ROBOT_OPERATION_STATUS_ROBOT_OPERATIONAL = 6;
+
+  const [robotOperationStatus, setRobotOperationStatus] = useState(0); //  Power Off,  Booting, Robot\nIdling, Release\nBrake, Robot\nOperational
+  const [isNetworkConnected, setIsNetworkConnected] = useState(false);
+  const [isRobotConnected, setIsRobotConnected] = useState(false);
+  const [isRobotPoweredOn, setIsRobotPoweredOn] = useState(false);
+  const [robotProgramStatus, setRobotProgramStatus] = useState("Not Available"); // ["Not Available","Running", "Stopped", "Initializing"]
+  const [robotControlMode, setRobotControlMode] = useState("not available"); // ["Unknown","remote", "local"]
+
+
+  useEffect(() => {
+    // Use useEffect to run the setup only once when the component mounts
+    console.log("useEffect")
+
+    socket.emit('settings', {robotProfile: null});
+
+
+    socket.on('robot-dashboard', (args) => {
+      console.log("robot-dashboard(socket): ", args);
+      
+      
+
+      if (args.hasOwnProperty("isNetworkConnected")) {
+        setIsNetworkConnected(args.isNetworkConnected);
+      } 
+      if (args.hasOwnProperty("isRobotConnected")) {
+        setIsRobotConnected(args.isRobotConnected);
+      } 
+      // if (args.hasOwnProperty("isRobotPoweredOn")) {
+      //   setIsRobotPoweredOn(args.isRobotPoweredOn);
+      // }
+      if (args.hasOwnProperty("robotOperationStatus")) {
+        setRobotOperationStatus(args.robotOperationStatus);
+        if(args.robotOperationStatus > ROBOT_OPERATION_STATUS_POWER_OFF){
+          setIsRobotPoweredOn(true);
+          console.log("setIsRobotPoweredOn(true)");
+        }else{
+          setIsRobotPoweredOn(false);
+          console.log("setIsRobotPoweredOn(false)");
+        }
+      } 
+      if (args.hasOwnProperty("robotControlMode")) {
+        setRobotControlMode(args.robotControlMode);
+      }
+      if (args.hasOwnProperty("robotProgramStatus")) {
+        setRobotProgramStatus(args.robotProgramStatus);
+        if (args.robotProgramStatus==="Running") {
+          setStartingTime(new Date());
+          // setProgramState("running");
+        } else {
+          // setProgramState("stopped");
+        }
+        // setStartingTime(new Date());
+        // setIsRobotProgramRunning(true);
+        // setProgramState("running");
+      }
+      if (args.speedSlider) {
+        setSliderValue(args.speedSlider);
+      }
+    });
+
+    // Cleanup: Remove the event listener when the component unmounts
+    return () => {
+      // socket.off('chat message', handleChatMessage);
+    };
+  }, [socket]); // Run the effect when the socket instance changes (component mounts or unmounts)
+
+
+  const sioHeader = "robot";
+
+
+
+  const onConnectBtnClick = () => {
+    const requestForm = {
+        connect: true,
+        endpoint: {
+          network: endpoint.server,
+          robot: endpoint.robot  
+        }
+      };
+    console.log("connectionRequestForm: ", requestForm);
+    ipcRenderer.send("robot-dashboard-request", requestForm);
+    socket.emit(sioHeader, requestForm);
+  }
+  const onDisconnectBtnClick = () => {
+    const requestForm = {
+        connect: false
+      };
+    socket.emit(sioHeader, requestForm);
+
+  }
+  const onPowerOnBtnClick = () => {
+    const requestForm = {
+        power: true
+      };
+
+    socket.emit(sioHeader, requestForm);
+
+  }
+  const onPowerOffBtnClick = () => {
+    const requestForm = {
+        power: false
+      };
+    socket.emit(sioHeader, requestForm);
+
+  }
+  const onStartProgramBtnClick = () => {
+    const requestForm = {
+        program: "start"
+      };
+    socket.emit(sioHeader, requestForm);
+  }
+  const onStopProgramBtnClick = () => {
+    const requestForm = {
+        program: "stop"
+      };
+    socket.emit(sioHeader, requestForm);
+  }
+
+  const [startingTime, setStartingTime] = useState(new Date(0));
+  const [elapsedTime, setRunningTime] = useState(new Date(0));
+  
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (robotProgramStatus === "Running") {
+        const currentTime = new Date();
+        setRunningTime(new Date(currentTime - startingTime));
+      }
+      return;
+    }, 1000);
+  
+    return () => clearInterval(interval);
+  }, [robotProgramStatus, elapsedTime, startingTime]);
+
+  const [sliderValue, setSliderValue] = useState(50);
+
+  const handleSliderChange = (event) => {
+    setSliderValue(event.target.value);
+    const requestForm = {
+      io: {
+        speedSlider: parseFloat(event.target.value)/100.0
+      }
+    };
+    console.log("speedSlider: ", requestForm);
+    socket.emit(sioHeader, requestForm);
+  };
+  const getTimeString = (time) => {
+    const hours = time.getUTCHours().toString().padStart(2, '0');
+    const minutes = time.getUTCMinutes().toString().padStart(2, '0');
+    const seconds = time.getUTCSeconds().toString().padStart(2, '0');
+    
+    return `${hours}:${minutes}:${seconds}`;
+  }
+
+  return (
+    <SectionLevel1>
+      <div className = "flex flex-col items-center w-[70rem]">
+        <div className="flex">
+          <div className="flex flex-col items-center w-[30rem]">
+          <SectionLevel2 title="Connection" className="w-[30rem]">
+            <div className="w-full pl-[1rem]">
+              <FieldText field="Network" content={isNetworkConnected?"Connected":"Disconnected"} />
+              <FieldText field="Robot" content={isRobotConnected?"Connected":"Disconnected"} />
+            </div>
+            <div className="w-full mt-[1rem] flex justify-center">
+              <CustomButton title="Connect" onClick={onConnectBtnClick} isButtonEnabled={!isRobotConnected}/>
+              <CustomButton title="Disconnect" onClick={onDisconnectBtnClick} isButtonEnabled={isRobotConnected}/>
+            </div>
+            </SectionLevel2>
+            <SectionLevel2 title="Operation Status" className="w-[30rem] mt-[2rem]" enable={isRobotConnected}>
+              <div className = "mt-[1rem]">
+                <RobotModeIndicatorSection status={robotOperationStatus}/>
+                <div className = "flex justify-center pl-[3rem] mt-[1rem]">
+                  <FieldText field="Control Mode" content={robotControlMode} />
+                </div>
+                <div className="mt-[1rem]">
+                  <CustomButton title="Power On" onClick={onPowerOnBtnClick} isButtonEnabled={isRobotConnected && !isRobotPoweredOn}/>
+                  <CustomButton title="Power Off" onClick={onPowerOffBtnClick} isButtonEnabled={isRobotConnected  && isRobotPoweredOn}/>
+                </div>
+              </div>
+            </SectionLevel2>
+
+          </div>
+
+          <SectionLevel2 title="Program" className="w-[30rem] ml-[2rem]" enable={isRobotConnected && robotOperationStatus === ROBOT_OPERATION_STATUS_ROBOT_OPERATIONAL}>
+            <div className="w-full pl-[1rem]">
+              <FieldText field="Name" content="ContinuousServoJ" />
+              <FieldText field="Version" content="1.1.0" />
+              <FieldText field="Status" content={robotProgramStatus} />
+              <FieldText field="Starting Time" content={getTimeString(startingTime)} />
+              <FieldText field="Running Time" content={getTimeString(elapsedTime)} />
+              <div className="mt-[2rem]">
+                <FieldText field="Speed Slider" content={`${sliderValue} %`} />
+                <input
+                  type="range"
+                  id="slider"
+                  min="0"
+                  max="100"
+                  step="1"
+                  value={sliderValue}
+                  onChange={handleSliderChange}
+                  className="w-[24rem] mt-[0.5rem]"
+                />
+              </div>
+
+            </div>
+            <div className="mt-[2rem]">
+            {/* <CustomButton title="Start" onClick={onStartProgramBtnClick} isButtonDisabled={((!isRobotConnected) || (!isRobotPoweredOn)) && (robotProgramStatus === "running")}/> */}
+            <CustomButton title="Start" onClick={onStartProgramBtnClick} isButtonEnabled={(isRobotConnected && isRobotPoweredOn) && (robotProgramStatus === "Stopped")}/>
+              <CustomButton title="Stop" onClick={onStopProgramBtnClick} isButtonEnabled={(isRobotConnected && isRobotPoweredOn) && (robotProgramStatus === "Running")}/>
+            </div>
+
+          </SectionLevel2>
+        </div>
+
+      </div>
+    </SectionLevel1>
+  )
+}
 
 
 export default App;

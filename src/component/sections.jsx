@@ -9,40 +9,39 @@ const ConfigSection = ({onEndpointUpdate, moduleProfile}) => {
     // const [robotEndPoint, setRobotEndPoint] = useState("192.167.0.3");
     const [robotEndPoint, setRobotEndPoint] = useState("192.168.0.68");
   
-    const [robotProfile, setRobotProfile] = useState({
-      "Robot Name": "not loaded",
-      "Hardware": "not loaded",
-      "Installed At": "not loaded",
-      "Serial Number": "not loaded",
-      "MAC Address": "not loaded"
-    }); 
+
+    let robotProfile = {
+        "Robot Name": "not loaded",
+        "Hardware": "not loaded",
+        "Installed At": "not loaded",
+        "Serial Number": "not loaded",
+        "MAC Address": "not loaded"
+  
+    }
   
     const [version, setVersion] = useState("123");
     const [files, setFiles] = useState([]);
-  
-  
-    useEffect(() => {
-        if (moduleProfile.hasOwnProperty("robot")) {
-          const robotProfile = moduleProfile.robot;
-          let profile = {};
-          if(robotProfile.hasOwnProperty("alias")){
-            profile["Robot Name"] = robotProfile.alias;
-          }
-          if(robotProfile.hasOwnProperty("hardware")){
-            profile["Hardware"] = robotProfile.hardware;
-          }
-          if(robotProfile.hasOwnProperty("serialNumber")){
-            profile["Serial Number"] = robotProfile.serialNumber;
-          }
-          if(robotProfile.hasOwnProperty("serialNumber")){
-            profile["MAC Address"] = robotProfile.serialNumber;
-          }
-          if(robotProfile.hasOwnProperty("createdAt")){
-            profile["Installed At"] = robotProfile.createdAt;
-          }
-          setRobotProfile(profile);
+ 
+
+    if (moduleProfile.hasOwnProperty("robot")) {
+        const robotProfile2 = moduleProfile.robot;
+        console.log("robotProfile: ", robotProfile2)
+        if(robotProfile2.hasOwnProperty("alias")){
+            robotProfile["Robot Name"] = robotProfile2.alias; // == moduleProfile.robot.alias
         }
-    }, []);
+        if(robotProfile2.hasOwnProperty("hardware")){
+            robotProfile["Hardware"] = robotProfile2.hardware;
+        }
+        if(robotProfile2.hasOwnProperty("serialNumber")){
+            robotProfile["Serial Number"] = robotProfile2.serialNumber;
+        }
+        if(robotProfile2.hasOwnProperty("serialNumber")){
+            robotProfile["MAC Address"] = robotProfile2.serialNumber;
+        }
+        if(robotProfile2.hasOwnProperty("createdAt")){
+            robotProfile["Installed At"] = robotProfile2.createdAt;
+        }
+    }
   
   
     const onChange = (e) => {

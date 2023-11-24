@@ -41,6 +41,7 @@ function App() {
     ipcRenderer.on("robot-dashboard", (event, args) => {
       console.log("robot-dashboard: ", args);
       if (args.hasOwnProperty("moduleProfile")) {
+        console.log("moduleProfile: ", args.moduleProfile);
         setModuleProfile(args.moduleProfile);
       }
     })
@@ -106,8 +107,39 @@ const CameraSection = () => {
     <SectionLevel1>
     <div className="bg-[white] w-full h-[28rem] flex flex-col p-[1rem] rounded-xl border border-2 border-gray">
       <div className="text-3xl">Camera Section</div>
-      <button className="bg-[#ACF] w-[12rem] h-[5rem] rounded-xl shadow-md text-2xl text-[white] m-[0.2rem]" onClick={onStartStreammingBtnClick}>Start Streaming</button>
-      <button className="bg-[#ACF] w-[12rem] h-[5rem] rounded-xl shadow-md text-2xl text-[white] m-[0.2rem]" onClick={onStartStreammingBtnClick}>Disconnect</button>
+      {/* <button className="bg-[#ACF] w-[12rem] h-[5rem] rounded-xl shadow-md text-2xl text-[white] m-[0.2rem]" onClick={onStartStreammingBtnClick}>Start Streaming</button>
+      <button className="bg-[#ACF] w-[12rem] h-[5rem] rounded-xl shadow-md text-2xl text-[white] m-[0.2rem]" onClick={onStartStreammingBtnClick}>Disconnect</button> */}
+      <div>
+        <SectionLevel2 title={"client"}>
+          <div>접속자수: 0</div>
+          <div>client information(list)</div>
+
+        </SectionLevel2>
+        <SectionLevel2 title={"camera setting"}>
+          <div>resolution: 8bit/12bit</div>
+          <div>depth</div>
+        </SectionLevel2>
+        <SectionLevel2 title={"camera setting"}>
+        </SectionLevel2>
+        <div>reset button</div>
+        <div>turn/stun server</div>
+        <div>kick out button</div>
+        <div>cpu load</div>
+        <SectionLevel2 title={"change setting"}>
+        <div>
+        change depth mode
+        <button className="bg-[#ACF] w-[12rem] h-[5rem] rounded-xl shadow-md text-xl text-[white] m-[0.1rem]" onClick={onStartStreammingBtnClick}>8bit</button>
+        <button className="bg-[#ACF] w-[12rem] h-[5rem] rounded-xl shadow-md text-xl text-[white] m-[0.1rem]" onClick={onStartStreammingBtnClick}>12bit</button>
+        </div>
+        <div>
+        change max visible distance
+        <button className="bg-[#ACF] w-[12rem] h-[5rem] rounded-xl shadow-md text-xl text-[white] m-[0.1rem]" onClick={onStartStreammingBtnClick}>8bit</button>
+        <button className="bg-[#ACF] w-[12rem] h-[5rem] rounded-xl shadow-md text-xl text-[white] m-[0.1rem]" onClick={onStartStreammingBtnClick}>12bit</button>
+        </div>
+
+        </SectionLevel2>
+
+      </div>
     </div>
 
     <form onSubmit={sendMessage}>

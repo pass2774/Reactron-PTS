@@ -54,9 +54,9 @@ const CustomButton = ({ title, onClick, isButtonEnabled=true, themeColor}) => {
   const SectionLevel1 = ({ title, children }) => {
   
     return (
-      <div class = "flex flex-col items-center p-[1rem] bg-[white] border-[#F5F5FA] border-[0.15rem] rounded-xl shadow-md mx-[0.5rem]">
-        {title? <div class="text-3xl font-bold">{title}</div> : null}
-        <div class="w-full mt-[0.5rem]">
+      <div className = "flex flex-col items-center p-[1rem] bg-[white] border-[#F5F5FA] border-[0.15rem] rounded-xl shadow-md mx-[0.5rem]">
+        {title? <div className="text-3xl font-bold">{title}</div> : null}
+        <div className="w-full mt-[0.5rem]">
           {children}
         </div>
       </div>
@@ -69,10 +69,10 @@ const CustomButton = ({ title, onClick, isButtonEnabled=true, themeColor}) => {
     return (
       <div className={`flex flex-col items-center mx-[0.5rem] ${props.className}`}>
           <div className={`drop-shadow-md w-full flex justify-start items-center`}>
-            <div class="mr-[0.5rem] text-lg font-bold whitespace-pre">{title}</div>
-            <div class="w-full h-[2px] bg-black rounded-full"></div>
+            <div className="mr-[0.5rem] text-lg font-bold whitespace-pre">{title}</div>
+            <div className="w-full h-[2px] bg-black rounded-full"></div>
           </div>
-          <div class={`w-full mt-[0.5rem] ${enable===true? "":"opacity-30"}`}>
+          <div className={`w-full mt-[0.5rem] ${enable===true? "":"opacity-30"}`}>
             {children}
           </div>
         </div>
@@ -85,7 +85,7 @@ const CustomButton = ({ title, onClick, isButtonEnabled=true, themeColor}) => {
     return (
       <div className="w-fit h-[1.8rem] flex rounded-sm my-[0.2rem]">
         <div className="w-[8rem] h-full text-md text-start truncate font-bold">{field}</div>
-        <div class="w-[1rem] h-full font-bold">:</div>
+        <div className="w-[1rem] h-full font-bold">:</div>
         <div className="w-[14rem] text-md font-bold">{children}</div>
       </div>
     );

@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain } = require("electron");
+const { app, BrowserWindow, ipcMain, dialog } = require("electron");
 const path = require("path");
 const isDev = require("electron-is-dev");
 const { SEND_MAIN_PING } = require("constants");
@@ -8,10 +8,12 @@ const ExternalProcess = require(path.join(__dirname, "runExternalProcess.js"));
 const scriptPath = path.join(__dirname, 'child_script.js');
 const npmPath = path.join(__dirname, 'node_modules', '.bin', 'npm');
 
-
+const fs =require('fs');
 const {spawn, spawnSync} = require('child_process');
 
 let mainWindow;
+
+let moduleProfile;
 
 function createWindow() {
   let server = require('./socketServer');
@@ -26,8 +28,6 @@ function createWindow() {
       preload: path.join(__dirname, "preload.js")
     },
   });
-
-
 
   // mainWindow.loadURL(
   //   url.format({
@@ -85,12 +85,13 @@ ipcMain.on("robot-dashboard-request", (event, args) => {
     if(args.hasOwnProperty("connect")){
       if (args.connect){
         ExternalProcess.runRobotProcess(args.endpoint);
-        // response.robotOperationStatus = 1;
         response.robotControlMode = "remote";
       } else {
-        // response.robotOperationStatus = 0;
         response.robotControlMode = "Not Available";
       }
+    }
+    if(args.hasOwnProperty("moduleProfile")){
+      response.moduleProfile = moduleProfile;
     }
 
     event.reply("robot-dashboard", response);
@@ -118,3 +119,36 @@ app.on("activate", () => {
     createWindow();
   }
 });
+
+// Function to open and modify a JSON file
+function openAndModifyJSONFile() {
+  // Read the JSON file
+  const filePath = "./src/config/moduleProfile.json";
+  fs.readFile(filePath, 'utf-8', (err, data) => {
+    if (err) {
+      console.error('Error reading file:', err);
+      return;
+    }
+
+    // Parse JSON data
+    moduleProfile = JSON.parse(data);
+    console.log("moduleProfile: ",moduleProfile);
+    // Modify the JSON data (replace this with your modification logic)
+    // moduleProfile.robot.connectivity.endpoint = {server:"portal301", robot:"192.168.0.3"};
+    // moduleProfile.camera.connectivity.endpoint = "http://localhost:xxxx";
+
+    // Convert the modified data back to JSON string
+    const modifiedJsonString = JSON.stringify(moduleProfile, null, 2);
+
+    // Write the modified data back to the file
+    fs.writeFile(filePath, modifiedJsonString, 'utf-8', (err) => {
+      if (err) {
+        console.error('Error writing file:', err);
+      } else {
+        console.log('File successfully modified.');
+      }
+    });
+  });
+}
+
+openAndModifyJSONFile();

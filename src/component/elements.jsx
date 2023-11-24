@@ -22,7 +22,7 @@ const CustomButton = ({ title, onClick, isButtonEnabled=true, themeColor}) => {
       setButtonDisabled(true);
       setTimeout(() => {
         setButtonDisabled(false);
-      }, 1000);
+      }, 3000);
     };
   
     useEffect(() => {

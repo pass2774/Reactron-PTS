@@ -1,19 +1,27 @@
 import { useEffect, useState, useRef } from "react";
 import logo from './logo.svg';
 import './App.css';
-import {SEND_MAIN_PING} from './constants'
+import { SEND_MAIN_PING } from './constants'
 
-import { CustomButton, SectionLevel1, SectionLevel2, FieldSelector, FieldInput, FieldText, RobotModeIndicatorSection, LedIndicator} from './component/elements'
+import { CustomButton, SectionLevel1, SectionLevel2, FieldSelector, FieldInput, FieldText, RobotModeIndicatorSection, LedIndicator } from './component/elements'
 import { RobotSection, ConfigSection } from './component/sections';
 
 import io from 'socket.io-client';
 
 
-const {ipcRenderer} = window;
+const { ipcRenderer } = window;
+const VERSION = "portalComm_v0.1"
 
 const socket = io('http://localhost:3001', {
   transports: ['websocket'],
 });
+
+const cameraSocket = io('https://localhost:3333', {
+  transports: ['websocket'],
+  path: `/${VERSION}`
+});
+
+
 
 function App() {
   const [moduleProfile, setModuleProfile] = useState({});
@@ -47,7 +55,7 @@ function App() {
     })
   }, []);
 
-  
+
   const onEndpointUpdate = (endpoint) => {
     setServerEndpoint(endpoint.server);
     setRobotEndPoint(endpoint.robot);
@@ -57,10 +65,10 @@ function App() {
     <div className="App">
       <div className="bg-white w-full h-full flex flex-col items-center py-[1rem] px-[8rem]">
         <div className="flex">
-          <ConfigSection onEndpointUpdate={onEndpointUpdate} moduleProfile={moduleProfile}/>
+          <ConfigSection onEndpointUpdate={onEndpointUpdate} moduleProfile={moduleProfile} />
           <div className="flex flex-col gap-[1rem]">
             <CameraSection />
-            <RobotSection socket={socket} endpoint={{server:serverEndpoint, robot:robotEndPoint}}/>
+            <RobotSection socket={socket} endpoint={{ server: serverEndpoint, robot: robotEndPoint }} />
           </div>
         </div>
       </div>
@@ -71,94 +79,85 @@ function App() {
 
 
 const CameraSection = () => {
-  const [messages, setMessages] = useState([]);
-  const inputRef = useRef(null);
-
-  const onStartStreammingBtnClick = () => {
-    ipcRenderer.send("runExternalProcess");
-  }
-  const sendMessage = (e) => {
-    e.preventDefault();
-    // Access the value of the input directly using the ref
-    const messageInputValue = inputRef.current.value;
-    socket.emit('chat message', messageInputValue);
-    inputRef.current.value = '';
-  };
 
   useEffect(() => {
-    // Use useEffect to run the setup only once when the component mounts
-    const handleChatMessage = (msg) => {
-      setMessages((prevMessages) => [...prevMessages, msg]);
-    };
-    console.log("useEffect")
 
-    socket.emit('settings', {robotProfile: null});
-
-    // Attach the event listener
-    socket.on('chat message', handleChatMessage);
-
-    // Cleanup: Remove the event listener when the component unmounts
     return () => {
-      socket.off('chat message', handleChatMessage);
     };
-  }, [socket]); // Run the effect when the socket instance changes (component mounts or unmounts)
+  }, []);
 
-  return(
+
+  return (
     <SectionLevel1>
-    <div className="bg-[white] w-full h-[28rem] flex flex-col p-[1rem] rounded-xl border border-2 border-gray">
-      <div className="text-3xl">Camera Section</div>
-      {/* <button className="bg-[#ACF] w-[12rem] h-[5rem] rounded-xl shadow-md text-2xl text-[white] m-[0.2rem]" onClick={onStartStreammingBtnClick}>Start Streaming</button>
-      <button className="bg-[#ACF] w-[12rem] h-[5rem] rounded-xl shadow-md text-2xl text-[white] m-[0.2rem]" onClick={onStartStreammingBtnClick}>Disconnect</button> */}
-      <div>
-        <SectionLevel2 title={"client"}>
-          <div>접속자수: 0</div>
-          <div>client information(list)</div>
+      <div className="flex flex-col items-center w-[41rem]">
+        <div className="flex">
+          <div className="flex flex-col items-center w-[12rem]">
+            <div className="w-full pl-[1rem]">
+              <CustomButton title="Start" size={'w-[10rem] h-[7rem]'} onClick={() => {
+                cameraSocket.emit("echo", 'KARI-CAM-0001');
+              }} />
+              <CustomButton title="Exit" size={'w-[10rem] h-[7rem]'} onClick={() => {
+                let zedSetting = { targetSetting: 'system', value: 'sys_exit'};
+                cameraSocket.emit("zed:command", 'KARI-CAM-0001', zedSetting);
 
-        </SectionLevel2>
-        <SectionLevel2 title={"camera setting"}>
-          <div>resolution: 8bit/12bit</div>
-          <div>depth</div>
-        </SectionLevel2>
-        <SectionLevel2 title={"camera setting"}>
-        </SectionLevel2>
-        <div>reset button</div>
-        <div>turn/stun server</div>
-        <div>kick out button</div>
-        <div>cpu load</div>
-        <SectionLevel2 title={"change setting"}>
-        <div>
-        change depth mode
-        <button className="bg-[#ACF] w-[12rem] h-[5rem] rounded-xl shadow-md text-xl text-[white] m-[0.1rem]" onClick={onStartStreammingBtnClick}>8bit</button>
-        <button className="bg-[#ACF] w-[12rem] h-[5rem] rounded-xl shadow-md text-xl text-[white] m-[0.1rem]" onClick={onStartStreammingBtnClick}>12bit</button>
-        </div>
-        <div>
-        change max visible distance
-        <button className="bg-[#ACF] w-[12rem] h-[5rem] rounded-xl shadow-md text-xl text-[white] m-[0.1rem]" onClick={onStartStreammingBtnClick}>8bit</button>
-        <button className="bg-[#ACF] w-[12rem] h-[5rem] rounded-xl shadow-md text-xl text-[white] m-[0.1rem]" onClick={onStartStreammingBtnClick}>12bit</button>
-        </div>
+                // cameraSocket.emit("sys_exit");
+              }}/>
+              <CustomButton title="Reboot" size={'w-[10rem] h-[7rem]'} />
+            </div>
+          </div>
 
-        </SectionLevel2>
+          <SectionLevel2 title="Camera Settings" className="w-[30rem] ml-[2rem]">
+            <FieldText field="Model" content={"Zed2 Mini"} />
+            <FieldText field="Resolution" content={"1280 x 720"} />
+            <FieldText field="Depth Mode" content={"8bit"} />
+            <FieldText field="Max Distance" content={"3m"} />
+            <div className="w-full pl-[1rem]">
+              <div className="mt-[2rem]">
+                <SectionLevel2 title="Command" className="w-[40rem] ml-[-1rem]">
+                  <div className="w-fit h-[1.8rem] flex justify-start rounded-sm my-[0.2rem]">
+                    <div
+                      className="w-[11rem] h-full text-md text-start truncate font-bold">Sensing Depth Mode</div>
+                  </div>
+
+                  <div className="w-full mt-[1rem] flex justify-center">
+                    <CustomButton title="8 bit" onClick={() => {
+                      console.log('bit 8..')
+                      let zedSetting = { targetSetting: 'bit', value: 8 };
+                      cameraSocket.emit("echo", 'KARI-CAM-0001');
+                      cameraSocket.emit("zed:command", 'KARI-CAM-0001', zedSetting);
+                      // visibleRangeRef.current.bitDepth = 8.0;
+                    }} />
+                    <CustomButton title="12 bit" onClick={() => {
+                      let zedSetting = { targetSetting: 'bit', value: 12 };
+                      cameraSocket.emit("zed:command", 'KARI-CAM-0001', zedSetting);
+                      // visibleRangeRef.current.bitDepth = 8.0;
+                    }} />
+                  </div>
+                  <FieldText field="Max Distance" content={'3m'} />
+                  <input
+                    type="range"
+                    id="slider"
+                    min="0"
+                    max="100"
+                    step="1"
+                    // value={sliderValue}
+                    // onChange={handleSliderChange}
+                    className="w-[20rem] mt-[0.5rem]"
+                  />
+                </SectionLevel2>
+
+              </div>
+
+
+            </div>
+            <div className="mt-[2rem]">
+
+            </div>
+          </SectionLevel2>
+        </div>
 
       </div>
-    </div>
-
-    <form onSubmit={sendMessage}>
-      <ul>
-        {messages.map((msg, index) => (
-          <li key={index}>{msg}</li>
-        ))}
-      </ul>
-      <input
-        type="text"
-        className="bg-[green]"
-        ref={inputRef}
-        // No onChange event, so it won't trigger state updates on each keystroke
-      />
-      <button type="submit" className="bg-[yellow]">
-        Send
-      </button>
-    </form>
-  </SectionLevel1>
+    </SectionLevel1>
 
   )
 }

@@ -16,7 +16,9 @@ let mainWindow;
 let moduleProfile;
 
 function createWindow() {
-  let server = require('./socketServer');
+  // let server = require('./socketServer');
+  let server2 = require('./socketServer/socketServer');
+
   mainWindow = new BrowserWindow({
     width: 1640,
     height: 1080,
@@ -106,6 +108,14 @@ ipcMain.on("robot-dashboard-request", (event, args) => {
 app.on("ready", ()=>{
 
   createWindow();
+});
+
+// SSL/TSL: this is the self signed certificate support
+app.on('certificate-error', (event, webContents, url, error, certificate, callback) => {
+  // On certificate error we disable default behaviour (stop loading the page)
+  // and we then say "it is all fine - true" to the callback
+  event.preventDefault();
+  callback(true);
 });
 
 app.on("window-all-closed", () => {

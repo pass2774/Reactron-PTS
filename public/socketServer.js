@@ -36,7 +36,7 @@ io.on('connection', (socket) => {
   socket.on('update-module-portal', (args) => {
     console.log('socket message with update-module-portal header received')
     console.log('args:', args);
-    response={};
+    let response={};
     if(args.hasOwnProperty("request")){
       //convert string to json for args.profile
       robotProfile = JSON.parse(args.profile);
@@ -48,7 +48,7 @@ io.on('connection', (socket) => {
   socket.on('settings', (args) => {
     console.log('socket message with settings header received')
     console.log('args:', args);
-    response={};
+    let response={};
     if(args.hasOwnProperty("robotProfile")){
       //convert string to json for args.profile
       response.robotProfile = robotProfile;

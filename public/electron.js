@@ -1,6 +1,8 @@
-const { execFile } = require('child_process');
+const { execFile, exec } = require('child_process');
 const { spawn, spawnSync } = require('child_process');
-const camAppPath = 'C:\\Users\\portal301\\Release\\PORTAL301_ZED_Application.exe';
+//const camAppPath = 'C:\\Users\\portal301\\Release\\PORTAL301_ZED_Application.exe';
+const camAppPath = 'C:\\workspace\\portal301\\C++\\zedApp\\build\\Release\\PORTAL301_ZED_Application.exe';
+const TerminalAppPath = 'C:\\workspace\\portal301\\C++\\zedApp\\build\\Release\\batStart.bat';
 
 // var spawn = require('child_process').spawn;
 
@@ -15,7 +17,7 @@ const ExternalProcess = require(path.join(__dirname, "runExternalProcess.js"));
 const scriptPath = path.join(__dirname, 'child_script.js');
 const npmPath = path.join(__dirname, 'node_modules', '.bin', 'npm');
 
-const fs =require('fs');
+const fs = require('fs');
 
 let mainWindow;
 let moduleProfile;
@@ -25,47 +27,56 @@ let child = null;
 
 function runCameraWithShell(event) {
 
-  const childProcess = execFile(camAppPath, [], (error, stdout, stderr) => {
-    //const child = execFile('C:\\workspace\\portal301\\C++\\zedApp\\build\\Release\\KARI_CAM_APP.exe', [], (error, stdout, stderr) => {
-      if (error) {
-        console.log(stderr);
-        throw error;
-      }
-      let exitCode = childProcess.exitCode;
-      console.log('child process terminated with code '+exitCode);
+  if (child) return;
 
-      if (exitCode !== 0) {
-        event.reply("cam:err", 'child process terminated with code '+exitCode);
-      }
-      else {
-        event.reply("cam:status", 'terminated');  
-      }
-    });
+  child = execFile(TerminalAppPath, [], (error, stdout, stderr) => {
+    //const child = execFile('C:\\workspace\\portal301\\C++\\zedApp\\build\\Release\\KARI_CAM_APP.exe', [], (error, stdout, stderr) => {
+    if (error) {
+      console.log(stderr);
+      isCamAppOpen = false;
+      child = null;
+      throw error;
+    }
+    event.reply("cam:log", stdout);
+    let exitCode = child.exitCode;
+    console.log('child process terminated with code ' + exitCode);
+
+    if (exitCode !== 0) {
+      event.reply("cam:err", 'child process terminated with code ' + exitCode);
+    }
+    else {
+      event.reply("cam:status", 'terminated');
+    }
+
+    isCamAppOpen = false;
+    child = null;
   
+  });
+
 }
 
 function runCamera(event) {
   //var child = spawn('C:\\workspace\\test.bat', [], {shell: true});
-  child = spawn(camAppPath, [], {shell: true});
+  child = spawn(camAppPath, [], { shell: true });
 
-  child.stdout.on('data', function(data) {
+  child.stdout.on('data', function (data) {
     // isCamAppOpen = false;
     console.log(data.toString());
     event.reply("cam:log", data.toString());
-    
-  });
-  
-  child.on('close', function(code, signal) {
-    //console.log('child process terminated due to receipt of signal '+signal);
-    console.log('child process terminated with code '+code);
 
-    if(code !== 0){
+  });
+
+  child.on('close', function (code, signal) {
+    //console.log('child process terminated due to receipt of signal '+signal);
+    console.log('child process terminated with code ' + code);
+
+    if (code !== 0) {
       //event.reply("cam:err", 'child process terminated with code '+code);
       event.reply("cam:status", 'abnormal termination');
     } else {
       event.reply("cam:status", 'terminated');
     }
-    
+
     isCamAppOpen = false;
     child = null;
   });
@@ -96,7 +107,7 @@ function createWindow() {
   //     slashes: true,
   //   })
   // );
-  
+
   mainWindow.loadURL(
     isDev
       ? "http://localhost:3000"
@@ -117,72 +128,77 @@ function createWindow() {
   });
   mainWindow.focus();
   // ExternalProcess.runHelloWorldProcess();
-//   ExternalProcess.runHelloWorldProcessSync();
+  //   ExternalProcess.runHelloWorldProcessSync();
 
 
   mainWindow.webContents.on('did-finish-load', () => {
-    mainWindow.webContents.send('hello',"data");
+    mainWindow.webContents.send('hello', "data");
     console.log("hello sent");
   });
 
 }
 
 ipcMain.on(SEND_MAIN_PING, (event, arg) => {
-    console.log("Main.js received a ping!!!")
+  console.log("Main.js received a ping!!!")
 })
 
 ipcMain.on("app_version", event => {
-    console.log("app_version request received")
-    event.reply("app_version", { version: app.getVersion() });
-  });
-  
+  console.log("app_version request received")
+  event.reply("app_version", { version: app.getVersion() });
+});
+
 ipcMain.on("runExternalProcess", event => {
-    console.log("runExternalProcess request received")
-    // event.reply("runExternalProcess", { version: app.getVersion() });
-    // ExternalProcess.runHelloWorldProcess();
-      ExternalProcess.runHelloWorldProcessSync();
-    
+  console.log("runExternalProcess request received")
+  // event.reply("runExternalProcess", { version: app.getVersion() });
+  // ExternalProcess.runHelloWorldProcess();
+  ExternalProcess.runHelloWorldProcessSync();
+
 });
 
 ipcMain.on("robot-dashboard-request", (event, args) => {
-    console.log("robot-dashboard-request received");
-    console.log("args: ",args);
-    let response = {};
-    if(args.hasOwnProperty("connect")){
-      if (args.connect){
-        ExternalProcess.runRobotProcess(args.endpoint);
-        response.robotControlMode = "remote";
-      } else {
-        response.robotControlMode = "Not Available";
-      }
+  console.log("robot-dashboard-request received");
+  console.log("args: ", args);
+  let response = {};
+  if (args.hasOwnProperty("connect")) {
+    if (args.connect) {
+      ExternalProcess.runRobotProcess(args.endpoint);
+      response.robotControlMode = "remote";
+    } else {
+      response.robotControlMode = "Not Available";
     }
-    if(args.hasOwnProperty("moduleProfile")){
-      response.moduleProfile = moduleProfile;
-    }
+  }
+  if (args.hasOwnProperty("moduleProfile")) {
+    response.moduleProfile = moduleProfile;
+  }
 
-    event.reply("robot-dashboard", response);
-    console.log("respose sent: ",response);
+  event.reply("robot-dashboard", response);
+  console.log("respose sent: ", response);
 
-    event.reply("runExternalProcess", { version: app.getVersion() });
+  event.reply("runExternalProcess", { version: app.getVersion() });
 });
 
 
 ipcMain.on("runCamera", (event, args) => {
+  console.log("runCamera received", args)
   if (isCamAppOpen === false) {
     isCamAppOpen = true;
-    runCamera(event);
-    
+    if (args === 'debug') {
+      runCameraWithShell(event);
+    } else {
+      runCamera(event);
+    }
+
   }
   else {
     event.reply("cam:alreadyOpen", true);
   }
-  
+
 });
 
 
 ipcMain.on("cam:test", (event, args) => {
   console.log("cam:test received");
-  if(child) {
+  if (child) {
     // console.log("cam:test child exists");
     // //child.stdin.resume();
     // //child.stdin.setDefaultEncoding('utf-8');
@@ -193,12 +209,12 @@ ipcMain.on("cam:test", (event, args) => {
     // child.stdin.write(String.fromCharCode(113));
     // // child.stdin.end();
   }
-  
+
 });
 
 
 
-app.on("ready", ()=>{
+app.on("ready", () => {
 
   createWindow();
 });
@@ -219,11 +235,11 @@ app.on("window-all-closed", () => {
 });
 
 
-app.on('before-quit', () => { 
+app.on('before-quit', () => {
   console.log('before-quit');
 });
 
-app.on('quit', () => { 
+app.on('quit', () => {
   console.log('quit!!!');
 });
 
@@ -245,7 +261,7 @@ function openAndModifyJSONFile() {
 
     // Parse JSON data
     moduleProfile = JSON.parse(data);
-    console.log("moduleProfile: ",moduleProfile);
+    console.log("moduleProfile: ", moduleProfile);
     // Modify the JSON data (replace this with your modification logic)
     // moduleProfile.robot.connectivity.endpoint = {server:"portal301", robot:"192.168.0.3"};
     // moduleProfile.camera.connectivity.endpoint = "http://localhost:xxxx";

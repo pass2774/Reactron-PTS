@@ -111,7 +111,7 @@ const CameraSection = () => {
         if (rebootRef.current) {
           console.log('runCamera');
           setTimeout(() => {
-            ipcRenderer.send("runCamera");
+            ipcRenderer.send("runCamera", 'spawn');
             rebootRef.current = false;
           }, 1000)
         }
@@ -163,21 +163,24 @@ const CameraSection = () => {
               <LedIndicator text={camStatus.status} color={camStatus.color} arg={'w-[9rem]'} />
               </SectionLevel2>
               <SectionLevel2 title="" className="w-[0rem] ml-[10rem]" />
-              <SectionLevel2 title="" className="w-[0rem] ml-[10rem]" />
-              <SectionLevel2 title="" className="w-[0rem] ml-[10rem]" />
 
               <SectionLevel2 title="App Control" className="w-[-1rem] ml-[1rem]">
-              <CustomButton title="Start" size={'w-[8rem] h-[5rem]'} onClick={() => {
-                ipcRenderer.send("runCamera");
+              <CustomButton title="Start" size={'w-[8rem] h-[4.5rem]'} onClick={() => {
+                ipcRenderer.send("runCamera", 'spawn');
               }} />
               <SectionLevel2 title="" className="w-[0rem] ml-[10rem]" />
-              <CustomButton title="Exit" size={'w-[8rem] h-[5rem]'} onClick={() => {
+              <CustomButton title="Terminal Start" size={'w-[8rem] h-[4.5rem]'} onClick={() => {
+                ipcRenderer.send("runCamera", 'debug');
+              }} />
+
+              <SectionLevel2 title="" className="w-[0rem] ml-[10rem]" />
+              <CustomButton title="Exit" size={'w-[8rem] h-[4.5rem]'} onClick={() => {
                 let zedSetting = { targetSetting: 'system', value: 'sys_exit' };
                 cameraSocket.emit("zed:command", 'KARI-CAM-0001', zedSetting);
 
               }} />
               <SectionLevel2 title="" className="w-[0rem] ml-[10rem]" />
-              <CustomButton title="Reboot(fix)" size={'w-[8rem] h-[5rem]'} onClick={() => {
+              <CustomButton title="Reboot(fix)" size={'w-[8rem] h-[4.5rem]'} onClick={() => {
                 setCamStatus({ status: 'reboot', color: '#00F' });
                 rebootRef.current = true;
 
@@ -189,14 +192,14 @@ const CameraSection = () => {
           </div>
 
           <SectionLevel2 title="Settings & Supported Set" className="w-[40rem] ml-[2rem]">
-            <FieldText field="Model" content={"Zed2 Mini"} />
+            <FieldText field="Model" content={"Zed Mini"} />
             <FieldText field="Resolution" content={"1280 x 720"} />
-            <FieldText field="Depth Mode" content={"8bit, 12bit"} />
-            <FieldText field="Visible Distance" content={"0m - 7m"} />
+            <FieldText field="Depth Mode" content={"8bit, 12bit (12bit)"} />
+            <FieldText field="Visible Distance" content={"0m - 7m (4m)"} />
             <div className="w-full pl-[1rem]">
               <div className="mt-[1rem]">
                 <SectionLevel2 title="Camera log" className="w-[40rem] ml-[-1rem]">
-                <div id="logArea" className="whitespace-pre-wrap text-left bg-white p-4 rounded shadow-md h-64 overflow-y-auto">
+                <div id="logArea" className="whitespace-pre-wrap overscroll-y-auto text-left bg-white p-4 rounded shadow-md h-64 overflow-y-auto">
                   {log}
                 </div>
                 </SectionLevel2>

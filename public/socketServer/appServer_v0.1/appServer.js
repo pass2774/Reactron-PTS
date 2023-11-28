@@ -43,7 +43,23 @@ function createSocketApp(server){
     };
     
     socket.on("zed:command", zedCommander);
-  
+    socket.on("loading", () => {
+      console.log(TAG, "loading");
+      io.emit("loading");
+    })
+    socket.on("ready", () => {
+      console.log(TAG, "ready");
+      io.emit("ready");
+    })
+    socket.on("terminating", () => {
+      console.log(TAG, "terminating");
+      io.emit("terminating");
+    })
+    socket.on("terminate", () => {
+      console.log(TAG, "terminate");
+      io.emit("terminate");
+    })
+    
 
     socket.on("PONG", (msg)=>{
       console.log(TAG,"pong from sid:"+socket.id+"  msg:"+msg);

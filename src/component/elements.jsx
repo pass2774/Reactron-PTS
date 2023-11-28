@@ -111,7 +111,7 @@ const FieldSelector = ({ field, children, color }) => {
   );
 };
 
-const FieldInput = ({ field, input, width }) => {
+const FieldInput = ({ field, input, width, onChange }) => {
   const widthInput = width ? width : "10rem";
 
   return (
@@ -119,7 +119,7 @@ const FieldInput = ({ field, input, width }) => {
       <div className="w-[8rem] h-full text-md text-start truncate font-bold">{field}</div>
       <div className="w-[1rem] h-full font-bold">:</div>
       {/* <input className="w-[12rem] h-full text-md text-start font-bold shadow-sm border border-1 border-[#CCF] rounded-lg px-[1rem] bg-[#FAFAFA]" type="text" id="fname" name="fname" value={input} /> */}
-      <input className={`w-[${widthInput}] h-full text-md text-start font-bold shadow-sm border border-1 border-[#CCF] rounded-lg px-[1rem] bg-[#FAFAFA]`} type="text" id="fname" name="fname" value={input} />
+      <input className={`w-[${widthInput}] h-full text-md text-start font-bold shadow-sm border border-1 border-[#CCF] rounded-lg px-[1rem] bg-[#FAFAFA]`} onChange={onChange} type="text" id="fname" name="fname" value={input} />
     </div>
   );
 };
@@ -184,11 +184,11 @@ const RobotModeIndicatorSection = ({ status }) => {
   );
 }
 
-const LedIndicator = ({ text, color }) => {
+const LedIndicator = ({ text, color, arg = 'w-[6rem]' }) => {
   const bgColor = Array.isArray(color) ? color[0] : color;
 
   return (
-    <div className="w-[6rem] flex flex-col items-center">
+    <div className={`${arg} flex flex-col items-center`}>
       <div
         style={{ backgroundColor: bgColor }}
         className="rounded-full shadow-md w-[3rem] h-[3rem]"

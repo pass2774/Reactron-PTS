@@ -1,23 +1,81 @@
+const { execFile } = require('child_process');
+const { spawn, spawnSync } = require('child_process');
+const camAppPath = 'C:\\Users\\portal301\\Release\\PORTAL301_ZED_Application.exe';
+
+// var spawn = require('child_process').spawn;
+
 const { app, BrowserWindow, ipcMain, dialog } = require("electron");
 const path = require("path");
 const isDev = require("electron-is-dev");
 const { SEND_MAIN_PING } = require("constants");
 const ExternalProcess = require(path.join(__dirname, "runExternalProcess.js"));
 
+
 // Use absolute path to your script
 const scriptPath = path.join(__dirname, 'child_script.js');
 const npmPath = path.join(__dirname, 'node_modules', '.bin', 'npm');
 
 const fs =require('fs');
-const {spawn, spawnSync} = require('child_process');
 
 let mainWindow;
-
 let moduleProfile;
+let isCamAppOpen = false;
+let child = null;
+
+
+function runCameraWithShell(event) {
+
+  const childProcess = execFile(camAppPath, [], (error, stdout, stderr) => {
+    //const child = execFile('C:\\workspace\\portal301\\C++\\zedApp\\build\\Release\\KARI_CAM_APP.exe', [], (error, stdout, stderr) => {
+      if (error) {
+        console.log(stderr);
+        throw error;
+      }
+      let exitCode = childProcess.exitCode;
+      console.log('child process terminated with code '+exitCode);
+
+      if (exitCode !== 0) {
+        event.reply("cam:err", 'child process terminated with code '+exitCode);
+      }
+      else {
+        event.reply("cam:status", 'terminated');  
+      }
+    });
+  
+}
+
+function runCamera(event) {
+  //var child = spawn('C:\\workspace\\test.bat', [], {shell: true});
+  child = spawn(camAppPath, [], {shell: true});
+
+  child.stdout.on('data', function(data) {
+    // isCamAppOpen = false;
+    console.log(data.toString());
+    event.reply("cam:log", data.toString());
+    
+  });
+  
+  child.on('close', function(code, signal) {
+    //console.log('child process terminated due to receipt of signal '+signal);
+    console.log('child process terminated with code '+code);
+
+    if(code !== 0){
+      //event.reply("cam:err", 'child process terminated with code '+code);
+      event.reply("cam:status", 'abnormal termination');
+    } else {
+      event.reply("cam:status", 'terminated');
+    }
+    
+    isCamAppOpen = false;
+    child = null;
+  });
+
+}
+
 
 function createWindow() {
-  // let server = require('./socketServer');
-  let server2 = require('./socketServer/socketServer');
+  let server = require('./socketServer');
+  let camServer = require('./socketServer/socketServer');
 
   mainWindow = new BrowserWindow({
     width: 1640,
@@ -50,7 +108,13 @@ function createWindow() {
   }
 
   mainWindow.setResizable(true);
-  mainWindow.on("closed", () => (mainWindow = null));
+  mainWindow.on("closed", () => {
+    mainWindow = null
+    if (child) {
+      console.log('child process terminated due to receipt of signal SIGTERM');
+      child.kill('SIGTERM');
+    }
+  });
   mainWindow.focus();
   // ExternalProcess.runHelloWorldProcess();
 //   ExternalProcess.runHelloWorldProcessSync();
@@ -103,6 +167,35 @@ ipcMain.on("robot-dashboard-request", (event, args) => {
 });
 
 
+ipcMain.on("runCamera", (event, args) => {
+  if (isCamAppOpen === false) {
+    isCamAppOpen = true;
+    runCamera(event);
+    
+  }
+  else {
+    event.reply("cam:alreadyOpen", true);
+  }
+  
+});
+
+
+ipcMain.on("cam:test", (event, args) => {
+  console.log("cam:test received");
+  if(child) {
+    // console.log("cam:test child exists");
+    // //child.stdin.resume();
+    // //child.stdin.setDefaultEncoding('utf-8');
+    // // child.stdin.write('q');
+    // child.stdin.write('q\n');
+    // child.stdin.write('q');
+    // child.stdin.write('q\r\n');
+    // child.stdin.write(String.fromCharCode(113));
+    // // child.stdin.end();
+  }
+  
+});
+
 
 
 app.on("ready", ()=>{
@@ -119,9 +212,19 @@ app.on('certificate-error', (event, webContents, url, error, certificate, callba
 });
 
 app.on("window-all-closed", () => {
+  console.log("window-all-closed@@@@")
   if (process.platform !== "darwin") {
     app.quit();
   }
+});
+
+
+app.on('before-quit', () => { 
+  console.log('before-quit');
+});
+
+app.on('quit', () => { 
+  console.log('quit!!!');
 });
 
 app.on("activate", () => {

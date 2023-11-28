@@ -9,6 +9,25 @@ const ConfigSection = ({onEndpointUpdate, moduleProfile}) => {
     // const [robotEndPoint, setRobotEndPoint] = useState("192.167.0.3");
     const [robotEndPoint, setRobotEndPoint] = useState("192.168.0.68");
   
+    const onChangeRobotIP = (e) => {
+      //console.log("onChangeRobotIP")
+      //console.log(e.target.value);
+      setRobotEndPoint(e.target.value);
+      onEndpointUpdate({
+        server:serverEndpoint, 
+        robot:e.target.value
+      });
+    }
+    const onChangeIntranetIP = (e) => {
+      //console.log("onChangeIntranetIP")
+      //console.log(e.target.value);
+      setServerEndpoint(e.target.value);
+      onEndpointUpdate({
+        server:e.target.value,
+        robot:robotEndPoint
+      });
+      console.log('target.value: ', e.target.value);
+    }
 
     let robotProfile = {
         "Robot Name": "not loaded",
@@ -45,14 +64,22 @@ const ConfigSection = ({onEndpointUpdate, moduleProfile}) => {
   
   
     const onChange = (e) => {
-      console.log("onSelect")
-      console.log(e.target.value);
+      console.log("onSelect", e.target.value)
+      
       setSelectedServer(e.target.value);
-      setServerEndpoint(e.target.value === "aws" ? "https://api.portal301.com" : "http://localhost:8080")
+      if (e.target.value === 'aws') {
+        setServerEndpoint("https://api.portal301.com");
+        onEndpointUpdate({
+          server:"https://api.portal301.com", 
+          robot:robotEndPoint
+        });  
+      } else if (e.target.value === 'intranet') {
+      setServerEndpoint("https://127.0.0.1:3333")
       onEndpointUpdate({
-        server:e.target.value === "aws" ? "https://api.portal301.com" : "http://localhost:8080", 
+        server:"https://127.0.0.1:3333", 
         robot:robotEndPoint
-      });
+      });  
+      }
     }
   
   
@@ -83,14 +110,14 @@ const ConfigSection = ({onEndpointUpdate, moduleProfile}) => {
               </FieldSelector>
               {
               selectedServer === "intranet" 
-                ? (<FieldInput field="EndPoint" input="https://127.0.0.1:3333" width="14rem" />) 
+                ? (<FieldInput field="EndPoint" input={serverEndpoint} width="14rem" onChange={onChangeIntranetIP}/>) 
                 : (<FieldText field="EndPoint" content="https://api.portal301.com" />)
               }
             </div>
           </SectionLevel2>
           <SectionLevel2 title="Robot Connectivity" className="w-full mt-[6rem]">
             <div className="w-full pl-[1rem]">
-              <FieldInput field="Robot IP" input={robotEndPoint} width="14rem"/>
+              <FieldInput field="Robot IP" input={robotEndPoint} width="14rem" onChange={onChangeRobotIP}/>
             </div>
           </SectionLevel2>
           <SectionLevel2 title="Robot Profile" className="w-full mt-[8rem]">
@@ -187,6 +214,8 @@ const RobotSection = ({socket, endpoint}) => {
   
   
     const onConnectBtnClick = () => {
+
+      
       const requestForm = {
           connect: true,
           endpoint: {

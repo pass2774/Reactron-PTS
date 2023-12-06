@@ -8,10 +8,9 @@ const TAG = "[portalComm_v0.1]" //for console.log
 
 // PORTALCOMM_VER: flag for the isolated process between each version of portalComm 
 const PORTALCOMM_VER = "portalComm_v0.1";
-
+let io = null;
 function createSocketApp(server){
-  const io = new Server(server,{path:`/${PORTALCOMM_VER}`});
-
+  io = new Server(server,{path:`/${PORTALCOMM_VER}`});
   io.on("connection", (socket) => {
     console.log(TAG,"socket initiated", socket.id);
     console.log(TAG,"current process is " + process.pid);
@@ -60,6 +59,7 @@ function createSocketApp(server){
       io.emit("terminate");
     })
     
+    
 
     socket.on("PONG", (msg)=>{
       console.log(TAG,"pong from sid:"+socket.id+"  msg:"+msg);
@@ -79,6 +79,14 @@ function createSocketApp(server){
 
 }
 
+function closeSocketApp(){
+  if (!io) return;
+  console.log(TAG,"close socket app")
+  io.disconnectSockets();
+  io.close();
+}
+
+
 function checkJSON_and_convert(maybeJSON){    //for the communication with python socketIO client
   if (typeof maybeJSON !== 'object'){
     console.log(TAG,"recieved packet is not a object type. convert it to JSON.")
@@ -89,3 +97,4 @@ function checkJSON_and_convert(maybeJSON){    //for the communication with pytho
 
 
 exports.createSocketApp = createSocketApp;
+exports.closeSocketApp = closeSocketApp;

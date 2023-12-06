@@ -7,7 +7,7 @@ const ConfigSection = ({onEndpointUpdate, moduleProfile}) => {
     const [selectedServer, setSelectedServer] = useState("aws");
     const [serverEndpoint, setServerEndpoint] = useState("https://api.portal301.com");
     // const [robotEndPoint, setRobotEndPoint] = useState("192.167.0.3");
-    const [robotEndPoint, setRobotEndPoint] = useState("192.168.0.68");
+    const [robotEndPoint, setRobotEndPoint] = useState("192.168.0.14");
   
     const onChangeRobotIP = (e) => {
       //console.log("onChangeRobotIP")

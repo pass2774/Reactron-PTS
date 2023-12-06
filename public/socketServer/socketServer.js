@@ -10,26 +10,10 @@ const bodyParser = require("body-parser");
 const https = require("https");
 const fs = require("fs");
 const appServer_v0_1 = require("./appServer_v0.1/appServer");
-
-// if (process.env.NODE_ENV === "production") {
-//   // multi-core
-//   cluster.schedulingPolicy = cluster.SCHED_RR;
-//   if (cluster.isMaster) {
-//     for (let i = 0; i < os.cpus().length; ++i) {
-//       cluster.fork();
-//     }
-
-//     cluster.on("exit", (worker) => {
-//       console.log("Worker " + worker.process.pid + " is dead");
-//       cluster.fork();
-//     });
-//   } else {
-//     startServer();
-//   }
-// } else {
-// single-core
+const exp = require("constants");
+let server = null;
 startServer();
-// }
+
 
 function startServer() {
 
@@ -51,7 +35,8 @@ function startServer() {
         rejectUnauthorized: false,
     };
 
-    const server = https.createServer(credentials, app);
+    server = https.createServer(credentials, app);
+    server.unref()
     server.listen(process.env.PORT || 3333, () => {
         console.log("Started the server on " + process.pid);
         console.log("Under development mode, make sure to permit SSL certificate on your browser.");
@@ -59,6 +44,15 @@ function startServer() {
 
     appServer_v0_1.createSocketApp(server);
     // }
+}
+
+function endServer() { 
+
+    appServer_v0_1.closeSocketApp();
+    server.closeAllConnections();
+    server.closeIdleConnections();
+    server.close();
+
 }
 
 function createApp() {
@@ -76,3 +70,6 @@ function createApp() {
     });
     return app;
 }
+
+
+exports.endServer = endServer;

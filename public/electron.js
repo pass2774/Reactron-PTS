@@ -18,27 +18,28 @@ const scriptPath = path.join(__dirname, 'child_script.js');
 const npmPath = path.join(__dirname, 'node_modules', '.bin', 'npm');
 
 const fs = require('fs');
+const { cat } = require('shelljs');
 
 let mainWindow;
 let moduleProfile;
 let isCamAppOpen = false;
-let child = null;
+let CameraProcess = null;
 
 
 function runCameraWithShell(event) {
 
-  if (child) return;
+  if (CameraProcess) return;
 
-  child = execFile(TerminalAppPath, [], (error, stdout, stderr) => {
+  CameraProcess = execFile(TerminalAppPath, [], (error, stdout, stderr) => {
     //const child = execFile('C:\\workspace\\portal301\\C++\\zedApp\\build\\Release\\KARI_CAM_APP.exe', [], (error, stdout, stderr) => {
     if (error) {
       console.log(stderr);
       isCamAppOpen = false;
-      child = null;
+      CameraProcess = null;
       throw error;
     }
     event.reply("cam:log", stdout);
-    let exitCode = child.exitCode;
+    let exitCode = CameraProcess.exitCode;
     console.log('child process terminated with code ' + exitCode);
 
     if (exitCode !== 0) {
@@ -49,24 +50,24 @@ function runCameraWithShell(event) {
     }
 
     isCamAppOpen = false;
-    child = null;
-  
+    CameraProcess = null;
+
   });
 
 }
 
 function runCamera(event) {
   //var child = spawn('C:\\workspace\\test.bat', [], {shell: true});
-  child = spawn(camAppPath, [], { shell: true });
+  CameraProcess = spawn(camAppPath, [], { shell: true });
 
-  child.stdout.on('data', function (data) {
+  CameraProcess.stdout.on('data', function (data) {
     // isCamAppOpen = false;
     console.log(data.toString());
     event.reply("cam:log", data.toString());
 
   });
 
-  child.on('close', function (code, signal) {
+  CameraProcess.on('close', function (code, signal) {
     //console.log('child process terminated due to receipt of signal '+signal);
     console.log('child process terminated with code ' + code);
 
@@ -78,7 +79,9 @@ function runCamera(event) {
     }
 
     isCamAppOpen = false;
-    child = null;
+    CameraProcess = null;
+    // console.log('app quit!!');
+    // app.quit();
   });
 
 }
@@ -119,13 +122,16 @@ function createWindow() {
   }
 
   mainWindow.setResizable(true);
-  mainWindow.on("closed", () => {
-    mainWindow = null
-    if (child) {
-      console.log('child process terminated due to receipt of signal SIGTERM');
-      child.kill('SIGTERM');
-    }
-  });
+  // mainWindow.on("closed", () => {
+  //   mainWindow = null
+  // });
+
+  mainWindow.on('close', async e => {
+    e.preventDefault()
+    // camServer.endServer();
+    mainWindow.webContents.send('close-default');
+  })
+
   mainWindow.focus();
   // ExternalProcess.runHelloWorldProcess();
   //   ExternalProcess.runHelloWorldProcessSync();
@@ -137,6 +143,44 @@ function createWindow() {
   });
 
 }
+
+ipcMain.on("close-default", event => {
+
+  try {
+    let countTryClose = 0;
+    console.log("close-default received");
+    const interval = setInterval(() => {
+      console.log("close-default setInterval");
+      if (CameraProcess) {
+        if (countTryClose === 5) {
+          clearInterval(interval);
+          if (mainWindow) {
+            mainWindow.destroy();
+            mainWindow = null;
+          }
+        }
+        if (mainWindow) mainWindow.webContents.send('close-default');
+        countTryClose++;
+
+      } else {
+        interval.unref();
+        clearInterval(interval);
+        if (mainWindow) {
+          mainWindow.destroy();
+          mainWindow = null;
+        }
+      }
+    }, 500);
+
+  } catch (error) {
+    console.log("close-default error: ", error);
+    if (mainWindow) {
+      mainWindow.destroy();
+      mainWindow = null;
+    }
+  }
+
+});
 
 ipcMain.on(SEND_MAIN_PING, (event, arg) => {
   console.log("Main.js received a ping!!!")
@@ -198,7 +242,7 @@ ipcMain.on("runCamera", (event, args) => {
 
 ipcMain.on("cam:test", (event, args) => {
   console.log("cam:test received");
-  if (child) {
+  if (CameraProcess) {
     // console.log("cam:test child exists");
     // //child.stdin.resume();
     // //child.stdin.setDefaultEncoding('utf-8');
@@ -228,9 +272,13 @@ app.on('certificate-error', (event, webContents, url, error, certificate, callba
 });
 
 app.on("window-all-closed", () => {
-  console.log("window-all-closed@@@@")
+  console.log("window-all-closed event")
   if (process.platform !== "darwin") {
+    if (CameraProcess) {
+      console.log("child exists, pid: ", CameraProcess.pid);
+    }
     app.quit();
+
   }
 });
 

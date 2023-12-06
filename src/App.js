@@ -28,6 +28,7 @@ function App() {
   const [serverEndpoint, setServerEndpoint] = useState("https://api.portal301.com");
   // const [robotEndPoint, setRobotEndPoint] = useState("192.167.0.3");
   const [robotEndPoint, setRobotEndPoint] = useState("192.168.0.68");
+  const [closing, setClosing] = useState(false);
 
 
   console.log("app created");
@@ -45,6 +46,9 @@ function App() {
     console.log("connectionRequestForm: ", requestForm);
     ipcRenderer.send("robot-dashboard-request", requestForm);
 
+    ipcRenderer.on("close-default", (event, args) => {
+      setClosing(true);
+    });
 
     ipcRenderer.on("robot-dashboard", (event, args) => {
       console.log("robot-dashboard: ", args);
@@ -62,6 +66,8 @@ function App() {
   }
 
   return (
+    <>
+    {closing && <OverlayTextComponent />}
     <div className="App">
       <div className="bg-white w-full h-full flex flex-col items-center py-[1rem] px-[8rem]">
         <div className="flex">
@@ -73,6 +79,7 @@ function App() {
         </div>
       </div>
     </div>
+    </>
   );
 }
 
@@ -124,6 +131,15 @@ const CameraSection = () => {
       // alert('Abnormal termination. Please check the log.');
     });
 
+    ipcRenderer.on("close-default", (event, args) => {
+      console.log("close-default, wait...");
+      let zedSetting = { targetSetting: 'system', value: 'sys_exit' };
+      cameraSocket.emit("zed:command", 'KARI-CAM-0001', zedSetting);
+      
+      ipcRenderer.send("close-default");
+    });
+
+
     cameraSocket.on('loading', () => {
       console.log("loading signal received");
       setCamStatus({ status: 'loading...', color: '#FFFF00' });
@@ -132,6 +148,7 @@ const CameraSection = () => {
     cameraSocket.on('terminating', () => {
       console.log("terminating signal received");
       setCamStatus({ status: 'terminating...', color: '#FFFF00' });
+      cameraSocket.emit("terminate");
     })
 
 
@@ -220,6 +237,35 @@ const CameraSection = () => {
   )
 }
 
+const OverlayTextComponent = () => {
+  const overlayContainerStyle = {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+    /* Add any additional styling for the container here */
+  };
+
+  const overlayTextStyle = {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
+    backgroundColor: 'rgba(255, 255, 255, 0.8)', // Adjust the background color and opacity as needed
+    padding: '10px',
+    borderRadius: '5px',
+    /* Add any additional styling for the overlay text here */
+    color: '#333',
+    fontSize: '40px',
+    fontWeight: 'bold',
+  };
+
+  return (
+    <div style={overlayContainerStyle}>
+      <div style={overlayTextStyle}>Closing... Please Wait.</div>
+      {/* Your other content goes here */}
+    </div>
+  );
+};
 
 export default App;
 

@@ -1,10 +1,3 @@
-const { execFile, exec } = require('child_process');
-const { spawn, spawnSync } = require('child_process');
-//const camAppPath = 'C:\\Users\\portal301\\Release\\PORTAL301_ZED_Application.exe';
-const camAppPath = 'C:\\workspace\\portal301\\C++\\zedApp\\build\\Release\\PORTAL301_ZED_Application.exe';
-const TerminalAppPath = 'C:\\workspace\\portal301\\C++\\zedApp\\build\\Release\\batStart.bat';
-
-// var spawn = require('child_process').spawn;
 
 const { app, BrowserWindow, ipcMain, dialog } = require("electron");
 const path = require("path");
@@ -22,74 +15,10 @@ const { cat } = require('shelljs');
 
 let mainWindow;
 let moduleProfile;
-let isCamAppOpen = false;
-let CameraProcess = null;
-
-
-function runCameraWithShell(event) {
-
-  if (CameraProcess) return;
-
-  CameraProcess = execFile(TerminalAppPath, [], (error, stdout, stderr) => {
-    //const child = execFile('C:\\workspace\\portal301\\C++\\zedApp\\build\\Release\\KARI_CAM_APP.exe', [], (error, stdout, stderr) => {
-    if (error) {
-      console.log(stderr);
-      isCamAppOpen = false;
-      CameraProcess = null;
-      throw error;
-    }
-    event.reply("cam:log", stdout);
-    let exitCode = CameraProcess.exitCode;
-    console.log('child process terminated with code ' + exitCode);
-
-    if (exitCode !== 0) {
-      event.reply("cam:err", 'child process terminated with code ' + exitCode);
-    }
-    else {
-      event.reply("cam:status", 'terminated');
-    }
-
-    isCamAppOpen = false;
-    CameraProcess = null;
-
-  });
-
-}
-
-function runCamera(event) {
-  //var child = spawn('C:\\workspace\\test.bat', [], {shell: true});
-  CameraProcess = spawn(camAppPath, [], { shell: true });
-
-  CameraProcess.stdout.on('data', function (data) {
-    // isCamAppOpen = false;
-    console.log(data.toString());
-    event.reply("cam:log", data.toString());
-
-  });
-
-  CameraProcess.on('close', function (code, signal) {
-    //console.log('child process terminated due to receipt of signal '+signal);
-    console.log('child process terminated with code ' + code);
-
-    if (code !== 0) {
-      //event.reply("cam:err", 'child process terminated with code '+code);
-      event.reply("cam:status", 'abnormal termination');
-    } else {
-      event.reply("cam:status", 'terminated');
-    }
-
-    isCamAppOpen = false;
-    CameraProcess = null;
-    // console.log('app quit!!');
-    // app.quit();
-  });
-
-}
-
 
 function createWindow() {
-  let server = require('./socketServer');
-  let camServer = require('./socketServer/socketServer');
+  let server = require('./socketServer'); // robot control server 
+  let camServer = require('./socketServer/socketServer'); // camera app control server
 
   mainWindow = new BrowserWindow({
     width: 1640,
@@ -102,14 +31,6 @@ function createWindow() {
       preload: path.join(__dirname, "preload.js")
     },
   });
-
-  // mainWindow.loadURL(
-  //   url.format({
-  //     pathname: path.join(__dirname, 'build', 'index.html'),
-  //     protocol: 'file:',
-  //     slashes: true,
-  //   })
-  // );
 
   mainWindow.loadURL(
     isDev
@@ -145,13 +66,12 @@ function createWindow() {
 }
 
 ipcMain.on("close-default", event => {
-
   try {
     let countTryClose = 0;
     console.log("close-default received");
     const interval = setInterval(() => {
       console.log("close-default setInterval");
-      if (CameraProcess) {
+      if (ExternalProcess?.cameraProcessisRunning()) {
         if (countTryClose === 5) {
           clearInterval(interval);
           mainWindowDestroy();
@@ -160,7 +80,6 @@ ipcMain.on("close-default", event => {
         countTryClose++;
 
       } else {
-        interval.unref();
         clearInterval(interval);
         mainWindowDestroy();
       }
@@ -191,8 +110,6 @@ ipcMain.on("app_version", event => {
 
 ipcMain.on("runExternalProcess", event => {
   console.log("runExternalProcess request received")
-  // event.reply("runExternalProcess", { version: app.getVersion() });
-  // ExternalProcess.runHelloWorldProcess();
   ExternalProcess.runHelloWorldProcessSync();
 
 });
@@ -222,37 +139,13 @@ ipcMain.on("robot-dashboard-request", (event, args) => {
 
 ipcMain.on("runCamera", (event, args) => {
   console.log("runCamera received", args)
-  if (isCamAppOpen === false) {
-    isCamAppOpen = true;
-    if (args === 'debug') {
-      runCameraWithShell(event);
-    } else {
-      runCamera(event);
-    }
 
-  }
-  else {
-    event.reply("cam:alreadyOpen", true);
-  }
+  const status = ExternalProcess.runCameraProcess(event, args);
+  
+  if (!status) event.reply("cam:alreadyOpen", true);
 
 });
 
-
-ipcMain.on("cam:test", (event, args) => {
-  console.log("cam:test received");
-  if (CameraProcess) {
-    // console.log("cam:test child exists");
-    // //child.stdin.resume();
-    // //child.stdin.setDefaultEncoding('utf-8');
-    // // child.stdin.write('q');
-    // child.stdin.write('q\n');
-    // child.stdin.write('q');
-    // child.stdin.write('q\r\n');
-    // child.stdin.write(String.fromCharCode(113));
-    // // child.stdin.end();
-  }
-
-});
 
 
 
@@ -272,9 +165,6 @@ app.on('certificate-error', (event, webContents, url, error, certificate, callba
 app.on("window-all-closed", () => {
   console.log("window-all-closed event")
   if (process.platform !== "darwin") {
-    if (CameraProcess) {
-      console.log("child exists, pid: ", CameraProcess.pid);
-    }
     app.quit();
 
   }

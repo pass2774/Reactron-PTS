@@ -147,9 +147,82 @@ robot-error-message (string)
     });
   }
 
+
+
+  const camAppPath = 'C:\\workspace\\portal301\\C++\\zedApp\\build\\Release\\PORTAL301_ZED_Application.exe';
+  const TerminalAppPath = 'C:\\workspace\\portal301\\C++\\zedApp\\build\\Release\\batStart.bat';
+  let CameraProcess = null;
+  
+  function runCameraProcessWithShell(event) {
+  
+    CameraProcess = execFile(TerminalAppPath, [], (error, stdout, stderr) => {
+      //const child = execFile('C:\\workspace\\portal301\\C++\\zedApp\\build\\Release\\KARI_CAM_APP.exe', [], (error, stdout, stderr) => {
+      if (error) {
+        console.log(stderr);
+        CameraProcess = null;
+        throw error;
+      }
+      event.reply("cam:log", stdout);
+      let exitCode = CameraProcess.exitCode;
+      console.log('child process terminated with code ' + exitCode);
+  
+      if (exitCode !== 0) {
+        event.reply("cam:err", 'child process terminated with code ' + exitCode);
+      }
+      else {
+        event.reply("cam:status", 'terminated');
+      }
+  
+      CameraProcess = null;
+  
+    });
+
+    return true;
+  
+  }
+  
+  function runCameraProcess(event, args) {
+
+    if (CameraProcess) return false;
+
+    if (args === 'debug') {
+      return runCameraProcessWithShell(event);
+    }
+
+    CameraProcess = spawn(camAppPath, [], { shell: true });
+  
+    CameraProcess.stdout.on('data', function (data) {
+      console.log(data.toString());
+      event.reply("cam:log", data.toString());
+  
+    });
+  
+    CameraProcess.on('close', function (code, signal) {
+      console.log('child process terminated with code ' + code);
+  
+      if (code !== 0) {
+        //event.reply("cam:err", 'child process terminated with code '+code);
+        event.reply("cam:status", 'abnormal termination');
+      } else {
+        event.reply("cam:status", 'terminated');
+      }
+  
+      CameraProcess = null;
+    });
+
+    return true;
+  
+  }
+
+  function cameraProcessisRunning() {
+    return CameraProcess !== null;
+  }
+
   // export default runHelloWorldProcess;
   module.exports={
     runRobotProcess,
+    runCameraProcess,
+    cameraProcessisRunning,
     runHelloWorldProcess,
     runHelloWorldProcessSync
   }

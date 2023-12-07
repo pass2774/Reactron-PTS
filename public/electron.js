@@ -154,10 +154,7 @@ ipcMain.on("close-default", event => {
       if (CameraProcess) {
         if (countTryClose === 5) {
           clearInterval(interval);
-          if (mainWindow) {
-            mainWindow.destroy();
-            mainWindow = null;
-          }
+          mainWindowDestroy();
         }
         if (mainWindow) mainWindow.webContents.send('close-default');
         countTryClose++;
@@ -165,22 +162,23 @@ ipcMain.on("close-default", event => {
       } else {
         interval.unref();
         clearInterval(interval);
-        if (mainWindow) {
-          mainWindow.destroy();
-          mainWindow = null;
-        }
+        mainWindowDestroy();
       }
     }, 500);
 
   } catch (error) {
     console.log("close-default error: ", error);
-    if (mainWindow) {
-      mainWindow.destroy();
-      mainWindow = null;
-    }
+    mainWindowDestroy();
   }
 
 });
+
+function mainWindowDestroy() { 
+  if (mainWindow) {
+    mainWindow.destroy();
+    mainWindow = null;
+  }
+}
 
 ipcMain.on(SEND_MAIN_PING, (event, arg) => {
   console.log("Main.js received a ping!!!")

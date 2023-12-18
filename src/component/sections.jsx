@@ -3,29 +3,40 @@ import { CustomButton, SectionLevel1, SectionLevel2, FieldSelector, FieldInput, 
 const {ipcRenderer} = window;
 
 
-const ConfigSection = ({onEndpointUpdate, moduleProfile, endpoints}) => {
+const ConfigSection = ({onEndpointUpdate, moduleProfile, endpoints, onConfigEdit}) => {
     const [selectedServer, setSelectedServer] = useState("");
-  
+    const [isConfigEditted, setIsConfigEditted] = useState(false);
+
     useEffect(() => {
       setSelectedServer(endpoints.remote[0].name);
 
     }, [endpoints]);
 
-    let serverEndpoint = endpoints.remote[0].address;
-    let robotEndPoint = endpoints.robot[0].address;
+    let config = {
+      moduleProfile: moduleProfile,
+      endpoints: endpoints
+    }
+
+    let serverEndpoint = config.endpoints.remote[0].address;
+    let robotEndpoint = config.endpoints.robot[0].address;
+
 
     console.log("selectedServer: ", selectedServer)
     const onChangeRobotIP = (e) => {
+      setIsConfigEditted(true);
+      config.endpoints.robot[0].address = e.target.value;
       onEndpointUpdate({
         server:serverEndpoint, 
         robot:e.target.value
       });
     }
     const onChangeIntranetIP = (e) => {
+      setIsConfigEditted(true);
+      config.endpoints.remote[0].address = e.target.value;
       serverEndpoint = e.target.value;
       onEndpointUpdate({
         server:e.target.value,
-        robot:robotEndPoint
+        robot:robotEndpoint
       });
       console.log('target.value: ', e.target.value);
     }
@@ -63,6 +74,11 @@ const ConfigSection = ({onEndpointUpdate, moduleProfile, endpoints}) => {
         }
     }
   
+    const onSaveBtnClick = () => {
+      console.log("onSaveBtnClick");
+      setIsConfigEditted(false);
+      onConfigEdit(config);
+    }
   
     const onChange = (e) => {
       console.log("onSelect", e.target.value)
@@ -75,7 +91,7 @@ const ConfigSection = ({onEndpointUpdate, moduleProfile, endpoints}) => {
           // setServerEndpoint(endpoints.remote[i].address);
           onEndpointUpdate({
             server:endpoints.remote[i].address, 
-            robot:robotEndPoint
+            robot:robotEndpoint
           });
         }
       }
@@ -99,7 +115,7 @@ const ConfigSection = ({onEndpointUpdate, moduleProfile, endpoints}) => {
             </div>
           </SectionLevel2>
   
-          <SectionLevel2 title="Network" className="w-full mt-[4rem]">
+          <SectionLevel2 title="Remote Connectivity" className="w-full mt-[4rem]">
             <div className="text-start w-full pl-[1rem]">
               <FieldSelector field="Server">
                 <select id="serverSelect" value={selectedServer} onChange={onChange} className="w-full h-full text-md text-start font-bold shadow-sm border border-1 border-[#CCF] rounded-lg px-[1rem] bg-[#FAFAFA]">
@@ -124,7 +140,7 @@ const ConfigSection = ({onEndpointUpdate, moduleProfile, endpoints}) => {
           </SectionLevel2>
           <SectionLevel2 title="Robot Connectivity" className="w-full mt-[6rem]">
             <div className="w-full pl-[1rem]">
-              <FieldInput field="Robot IP" input={robotEndPoint} width="14rem" onChange={onChangeRobotIP}/>
+              <FieldInput field="Robot IP" input={robotEndpoint} width="14rem" onChange={onChangeRobotIP}/>
             </div>
           </SectionLevel2>
           <SectionLevel2 title="Robot Profile" className="w-full mt-[8rem]">
@@ -138,6 +154,9 @@ const ConfigSection = ({onEndpointUpdate, moduleProfile, endpoints}) => {
               }
             </div>
           </SectionLevel2>
+          <div className="w-full mt-[5rem]">
+            <CustomButton title="Save" onClick={onSaveBtnClick} isButtonEnabled={isConfigEditted} size={"w-full h-[3.5rem]"}/>
+          </div>
         </div>
       </SectionLevel1>
     )

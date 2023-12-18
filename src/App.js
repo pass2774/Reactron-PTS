@@ -70,6 +70,21 @@ function App() {
     })
   }, []);
 
+  const onConfigEdit = (config) => { // under construction
+
+    const requestForm = {};
+    if (config.hasOwnProperty("moduleProfile")) {
+      requestForm.moduleProfile = {header:"set", body: config.moduleProfile};
+    }
+    if (config.hasOwnProperty("endpoints")) {
+      requestForm.endpoints = {header:"set", body: config.endpoints};
+    }
+
+    console.log("connectionRequestForm: ", requestForm);
+    ipcRenderer.send("robot-dashboard-request", requestForm);
+
+
+  }
 
   const onEndpointUpdate = (endpoint) => {
     setServerEndpoint(endpoint.server);
@@ -82,7 +97,7 @@ function App() {
     <div className="App">
       <div className="bg-white w-full h-full flex flex-col items-center py-[1rem] px-[8rem]">
         <div className="flex">
-          <ConfigSection onEndpointUpdate={onEndpointUpdate} moduleProfile={moduleProfile} endpoints={endpoints}/>
+          <ConfigSection onEndpointUpdate={onEndpointUpdate} onConfigEdit={onConfigEdit} moduleProfile={moduleProfile} endpoints={endpoints}/>
           <div className="flex flex-col gap-[1rem]">
             <CameraSection />
             <RobotSection socket={socket} endpoint={{ server: serverEndpoint, robot: robotEndPoint }} />

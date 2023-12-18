@@ -10,11 +10,16 @@ const ExternalProcess = require(path.join(__dirname, "runExternalProcess.js"));
 const scriptPath = path.join(__dirname, 'child_script.js');
 const npmPath = path.join(__dirname, 'node_modules', '.bin', 'npm');
 
+
+const path_moduleProfile = "./src/config/moduleProfile.json";
+const path_endpoints = "./src/config/endpoints.json";
+let moduleProfile;
+let endpoints;
+
 const fs = require('fs');
 const { cat } = require('shelljs');
 
 let mainWindow;
-let moduleProfile;
 // let endpoints;
 function createWindow() {
   let server = require('./socketServer'); // robot control server 
@@ -127,25 +132,59 @@ ipcMain.on("robot-dashboard-request", (event, args) => {
     }
   }
   if (args.hasOwnProperty("moduleProfile")) {
-    response.moduleProfile = moduleProfile;
+    if (args.moduleProfile.header === "get") {
+      fs.readFile(path_moduleProfile, 'utf-8', (err, data) => {
+        if (err) {
+          console.error('Error reading file:', err);
+          return;
+        }
+        moduleProfile = JSON.parse(data);
+        response.moduleProfile = moduleProfile;
+        event.reply("robot-dashboard", response);
+      });
+    } else if (args.moduleProfile.header === "set") { // not tested - joonhwa choi 2023-12-18
+      moduleProfile = args.moduleProfile.body;
+      const modifiedJsonString = JSON.stringify(moduleProfile, null, 2);
+      // Write the modified data back to the file
+      fs.writeFile(path_moduleProfile, modifiedJsonString, 'utf-8', (err) => {
+        if (err) {
+          console.error('Error writing file:', err);
+        } else {
+          console.log('File successfully modified.');
+        }
+        response.moduleProfile = moduleProfile;
+        event.reply("robot-dashboard", response);
+      });
+    }
   }
   if (args.hasOwnProperty("endpoints")) {
-    // Read the JSON file
-    const path_endpoints = "./src/config/endpoints.json";
-    fs.readFile(path_endpoints, 'utf-8', (err, data) => {
-      if (err) {
-        console.error('Error reading file:', err);
-        return;
-      }
-      // Parse JSON data
-      let endpoints = JSON.parse(data);
-      response.endpoints = endpoints;
-      console.log("path_endpoints: ", path_endpoints);
-      console.log("endpoints: ", endpoints);
-      event.reply("robot-dashboard", response);
+    if (args.endpoints.header === "get") {
+      // Read the JSON file
+      fs.readFile(path_endpoints, 'utf-8', (err, data) => {
+        if (err) {
+          console.error('Error reading file:', err);
+          return;
+        }
+        // Parse JSON data
+        endpoints = JSON.parse(data);
+        response.endpoints = endpoints;
+        event.reply("robot-dashboard", response);
+      });
+    } else if (args.endpoints.header === "set") {
+      endpoints = args.endpoints.body;
+      const modifiedJsonString = JSON.stringify(endpoints, null, 2);
+      // Write the modified data back to the file
+      fs.writeFile(path_endpoints, modifiedJsonString, 'utf-8', (err) => {
+        if (err) {
+          console.error('Error writing file:', err);
+        } else {
+          console.log('File successfully modified.');
+        }
+        response.endpoints = endpoints;
+        event.reply("robot-dashboard", response);
+      });
+    }
 
-
-    });
   }
 
   event.reply("robot-dashboard", response);
@@ -206,7 +245,6 @@ app.on("activate", () => {
 // Function to open and modify a JSON file
 function openAndModifyJSONFile() {
   // Read the JSON file
-  const path_moduleProfile = "./src/config/moduleProfile.json";
   fs.readFile(path_moduleProfile, 'utf-8', (err, data) => {
     if (err) {
       console.error('Error reading file:', err);

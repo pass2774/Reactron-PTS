@@ -15,7 +15,7 @@ const { cat } = require('shelljs');
 
 let mainWindow;
 let moduleProfile;
-
+// let endpoints;
 function createWindow() {
   let server = require('./socketServer'); // robot control server 
   let camServer = require('./socketServer/socketServer'); // camera app control server
@@ -129,6 +129,24 @@ ipcMain.on("robot-dashboard-request", (event, args) => {
   if (args.hasOwnProperty("moduleProfile")) {
     response.moduleProfile = moduleProfile;
   }
+  if (args.hasOwnProperty("endpoints")) {
+    // Read the JSON file
+    const path_endpoints = "./src/config/endpoints.json";
+    fs.readFile(path_endpoints, 'utf-8', (err, data) => {
+      if (err) {
+        console.error('Error reading file:', err);
+        return;
+      }
+      // Parse JSON data
+      let endpoints = JSON.parse(data);
+      response.endpoints = endpoints;
+      console.log("path_endpoints: ", path_endpoints);
+      console.log("endpoints: ", endpoints);
+      event.reply("robot-dashboard", response);
+
+
+    });
+  }
 
   event.reply("robot-dashboard", response);
   console.log("respose sent: ", response);
@@ -188,8 +206,8 @@ app.on("activate", () => {
 // Function to open and modify a JSON file
 function openAndModifyJSONFile() {
   // Read the JSON file
-  const filePath = "./src/config/moduleProfile.json";
-  fs.readFile(filePath, 'utf-8', (err, data) => {
+  const path_moduleProfile = "./src/config/moduleProfile.json";
+  fs.readFile(path_moduleProfile, 'utf-8', (err, data) => {
     if (err) {
       console.error('Error reading file:', err);
       return;
@@ -206,7 +224,7 @@ function openAndModifyJSONFile() {
     const modifiedJsonString = JSON.stringify(moduleProfile, null, 2);
 
     // Write the modified data back to the file
-    fs.writeFile(filePath, modifiedJsonString, 'utf-8', (err) => {
+    fs.writeFile(path_moduleProfile, modifiedJsonString, 'utf-8', (err) => {
       if (err) {
         console.error('Error writing file:', err);
       } else {
@@ -214,6 +232,8 @@ function openAndModifyJSONFile() {
       }
     });
   });
+
+
 }
 
 openAndModifyJSONFile();

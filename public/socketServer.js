@@ -25,6 +25,7 @@ app.get('/', function(req, res) {
 });
 
 io.on('connection', (socket) => {
+  let profile = {role: null};
 
   console.log('Client connected - id: ', socket.id);
 
@@ -41,6 +42,7 @@ io.on('connection', (socket) => {
       //convert string to json for args.profile
       robotProfile = JSON.parse(args.profile);
       response.robotProfile = robotProfile;
+      profile.role = "robot"
     }
     io.emit("robot-dashboard", response);    
   });
@@ -115,6 +117,13 @@ io.on('connection', (socket) => {
 
   socket.on('disconnect', () => {
     console.log('User disconnected - id: ', socket.id);
+    let response = {};
+    if(profile.role === "robot"){
+      console.log("robot disconnected")
+      response.isRobotConnected = false;
+      response.isNetworkConnected = false;
+      io.emit('robot-dashboard', response);
+    }
   });
 });
 

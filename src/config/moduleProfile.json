@@ -3,7 +3,7 @@
     "type": "cambot",
     "serialNumber": "KARI-0000",
     "password": "0000",
-    "alias": "cambotXr-UR5e-prototype",
+    "alias": "UR5ePTS",
     "owner": "portal301",
     "description": "XR camera and robot",
     "auth_level": "0",
@@ -15,7 +15,7 @@
     "hardware": "UR5e",
     "serialNumber": "KARI-0000:0",
     "password": "0000",
-    "alias": "cambotXr-UR5e-prototype:robot",
+    "alias": "UR5ePTS:robot",
     "owner": "portal301",
     "description": "XR camera and robot-robot",
     "connectivity": {
@@ -35,7 +35,7 @@
     "hardware": "zed3d",
     "serialNumber": "KARI-0000:1",
     "password": "0000",
-    "alias": "cambotXr-UR5e-prototype:camera",
+    "alias": "UR5ePTSipconf:camera",
     "owner": "portal301",
     "description": "XR camera and robot-camera",
     "connectivity": {

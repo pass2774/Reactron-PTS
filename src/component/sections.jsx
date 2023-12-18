@@ -3,25 +3,26 @@ import { CustomButton, SectionLevel1, SectionLevel2, FieldSelector, FieldInput, 
 const {ipcRenderer} = window;
 
 
-const ConfigSection = ({onEndpointUpdate, moduleProfile}) => {
-    const [selectedServer, setSelectedServer] = useState("aws");
-    const [serverEndpoint, setServerEndpoint] = useState("https://api.portal301.com");
-    // const [robotEndPoint, setRobotEndPoint] = useState("192.167.0.3");
-    const [robotEndPoint, setRobotEndPoint] = useState("192.168.0.14");
+const ConfigSection = ({onEndpointUpdate, moduleProfile, endpoints}) => {
+    const [selectedServer, setSelectedServer] = useState("");
   
+    useEffect(() => {
+      setSelectedServer(endpoints.remote[0].name);
+
+    }, [endpoints]);
+
+    let serverEndpoint = endpoints.remote[0].address;
+    let robotEndPoint = endpoints.robot[0].address;
+
+    console.log("selectedServer: ", selectedServer)
     const onChangeRobotIP = (e) => {
-      //console.log("onChangeRobotIP")
-      //console.log(e.target.value);
-      setRobotEndPoint(e.target.value);
       onEndpointUpdate({
         server:serverEndpoint, 
         robot:e.target.value
       });
     }
     const onChangeIntranetIP = (e) => {
-      //console.log("onChangeIntranetIP")
-      //console.log(e.target.value);
-      setServerEndpoint(e.target.value);
+      serverEndpoint = e.target.value;
       onEndpointUpdate({
         server:e.target.value,
         robot:robotEndPoint
@@ -66,23 +67,21 @@ const ConfigSection = ({onEndpointUpdate, moduleProfile}) => {
     const onChange = (e) => {
       console.log("onSelect", e.target.value)
       
+      // selectedServer = e.target.value;
       setSelectedServer(e.target.value);
-      if (e.target.value === 'aws') {
-        setServerEndpoint("https://api.portal301.com");
-        onEndpointUpdate({
-          server:"https://api.portal301.com", 
-          robot:robotEndPoint
-        });  
-      } else if (e.target.value === 'intranet') {
-      setServerEndpoint("https://127.0.0.1:3333")
-      onEndpointUpdate({
-        server:"https://127.0.0.1:3333", 
-        robot:robotEndPoint
-      });  
+      for (let i = 0; i < endpoints.remote.length; i++) {
+        if (endpoints.remote[i].name === e.target.value) {
+          serverEndpoint = endpoints.remote[i].address;
+          // setServerEndpoint(endpoints.remote[i].address);
+          onEndpointUpdate({
+            server:endpoints.remote[i].address, 
+            robot:robotEndPoint
+          });
+        }
       }
     }
   
-  
+
     return (
       <SectionLevel1>
         <div className="text-3xl font-bold mb-[1rem] text-start w-full">System Configuration</div>
@@ -93,7 +92,7 @@ const ConfigSection = ({onEndpointUpdate, moduleProfile}) => {
               {
                 Object.entries(robotProfile).map( ([key, value]) => {
                   return (
-                    <FieldText field={key} content={value} />
+                    <FieldText key={key} field={key} content={value} />
                   )
                 })
               }
@@ -104,14 +103,22 @@ const ConfigSection = ({onEndpointUpdate, moduleProfile}) => {
             <div className="text-start w-full pl-[1rem]">
               <FieldSelector field="Server">
                 <select id="serverSelect" value={selectedServer} onChange={onChange} className="w-full h-full text-md text-start font-bold shadow-sm border border-1 border-[#CCF] rounded-lg px-[1rem] bg-[#FAFAFA]">
-                  <option value="intranet">Intranet server</option>
-                  <option value="aws">AWS public server</option>
+                {endpoints.remote.map((endpoint, index) => (
+                  <option key={index} value={endpoint.name}>
+                    {endpoint.name}
+                  </option>
+                ))}
                 </select>
               </FieldSelector>
               {
-              selectedServer === "intranet" 
-                ? (<FieldInput field="EndPoint" input={serverEndpoint} width="14rem" onChange={onChangeIntranetIP}/>) 
-                : (<FieldText field="EndPoint" content="https://api.portal301.com" />)
+                endpoints.remote.map((endpoint) => (
+                  endpoint.name === selectedServer
+                  ?(endpoint.isEditable === true
+                    ?(<FieldInput key={endpoint.name} field="EndPoint" input={endpoint.address} width="14rem" onChange={onChangeIntranetIP}/>)
+                    :(<FieldText key={endpoint.name} field="EndPoint" content={endpoint.address} />)
+                  )
+                  : null
+                ))
               }
             </div>
           </SectionLevel2>
@@ -125,7 +132,7 @@ const ConfigSection = ({onEndpointUpdate, moduleProfile}) => {
               {
                 Object.entries(robotProfile).map( ([key, value]) => {
                   return (
-                    <FieldText field={key} content={value} />
+                    <FieldText key={key} field={key} content={value} />
                   )
                 })
               }
@@ -329,7 +336,7 @@ const RobotSection = ({socket, endpoint}) => {
   
             <SectionLevel2 title="Program" className="w-[30rem] ml-[2rem]" enable={isRobotConnected && robotOperationStatus === ROBOT_OPERATION_STATUS_ROBOT_OPERATIONAL}>
               <div className="w-full pl-[1rem]">
-                <FieldText field="Name" content="ContinuousServoJ" />
+                <FieldText field="Name" content="MotionSync.urp" />
                 <FieldText field="Version" content="1.1.0" />
                 <FieldText field="Status" content={robotProgramStatus} />
                 <FieldText field="Starting Time" content={getTimeString(startingTime)} />

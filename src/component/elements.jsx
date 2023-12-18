@@ -119,7 +119,7 @@ const FieldInput = ({ field, input, width, onChange }) => {
       <div className="w-[8rem] h-full text-md text-start truncate font-bold">{field}</div>
       <div className="w-[1rem] h-full font-bold">:</div>
       {/* <input className="w-[12rem] h-full text-md text-start font-bold shadow-sm border border-1 border-[#CCF] rounded-lg px-[1rem] bg-[#FAFAFA]" type="text" id="fname" name="fname" value={input} /> */}
-      <input className={`w-[${widthInput}] h-full text-md text-start font-bold shadow-sm border border-1 border-[#CCF] rounded-lg px-[1rem] bg-[#FAFAFA]`} onChange={onChange} type="text" id="fname" name="fname" value={input} />
+      <input className={`w-[${widthInput}] h-full text-md text-start font-bold shadow-sm border border-1 border-[#CCF] rounded-lg px-[1rem] bg-[#FAFAFA]`} onChange={onChange} type="text" id="fname" name="fname" defaultValue={input} />
     </div>
   );
 };
@@ -174,9 +174,9 @@ const RobotModeIndicatorSection = ({ status }) => {
   return (
     <div className="flex w-full justify-center">
       {
-        indicators.map(item => {
+        indicators.map((item,index) => {
           return (
-            <LedIndicator text={item.title} color={item.color} />
+            <LedIndicator key={index} text={item.title} color={item.color} />
           )
         })
       }

@@ -26,11 +26,17 @@ const cameraSocket = io('https://localhost:3333', { // camera socket server
 function App() {
   const [moduleProfile, setModuleProfile] = useState({});
   const [serverEndpoint, setServerEndpoint] = useState("https://api.portal301.com");
-  // const [robotEndPoint, setRobotEndPoint] = useState("192.167.0.3");
-  const [robotEndPoint, setRobotEndPoint] = useState("192.168.0.68");
+  const [robotEndPoint, setRobotEndPoint] = useState("");
   const [closing, setClosing] = useState(false);
 
-
+  const [endpoints, setEndpoints] = useState(      {
+    "remote": [
+      {},
+    ],
+    "robot": [
+      {}
+    ]
+  });
   console.log("app created");
 
 
@@ -41,7 +47,8 @@ function App() {
     // });
 
     const requestForm = {
-      moduleProfile: "dummy",
+      moduleProfile: {header:"get"},
+      endpoints: {header:"get"}
     };
     console.log("connectionRequestForm: ", requestForm);
     ipcRenderer.send("robot-dashboard-request", requestForm);
@@ -55,6 +62,10 @@ function App() {
       if (args.hasOwnProperty("moduleProfile")) {
         console.log("moduleProfile: ", args.moduleProfile);
         setModuleProfile(args.moduleProfile);
+      }
+      if (args.hasOwnProperty("endpoints")) {
+        console.log("Endpoints: ", args.endpoints);
+        setEndpoints(args.endpoints);
       }
     })
   }, []);
@@ -71,7 +82,7 @@ function App() {
     <div className="App">
       <div className="bg-white w-full h-full flex flex-col items-center py-[1rem] px-[8rem]">
         <div className="flex">
-          <ConfigSection onEndpointUpdate={onEndpointUpdate} moduleProfile={moduleProfile} />
+          <ConfigSection onEndpointUpdate={onEndpointUpdate} moduleProfile={moduleProfile} endpoints={endpoints}/>
           <div className="flex flex-col gap-[1rem]">
             <CameraSection />
             <RobotSection socket={socket} endpoint={{ server: serverEndpoint, robot: robotEndPoint }} />
@@ -88,7 +99,7 @@ function App() {
 const CameraSection = () => {
 
   const [log, setLog] = useState('');
-  const [camStatus, setCamStatus] = useState({ status: 'off', color: '#808080' });
+  const [camStatus, setCamStatus] = useState({ status: 'Off', color: '#808080' });
   const rebootRef = useRef(false);
 
   useEffect(() => {
@@ -110,11 +121,11 @@ const CameraSection = () => {
       console.log("cam:status: ", args);
 
       if (args === 'abnormal termination') { // "#F00"
-        setCamStatus({ status: 'abnormal', color: '#F00' });
+        setCamStatus({ status: 'Abnormal', color: '#F00' });
         alert("Camera App was abnormal terminated!");
       }
       else if (args === 'terminated') {
-        setCamStatus({ status: 'off', color: '#808080' });
+        setCamStatus({ status: 'Off', color: '#808080' });
         if (rebootRef.current) {
           console.log('runCamera');
           setTimeout(() => {
@@ -142,12 +153,12 @@ const CameraSection = () => {
 
     cameraSocket.on('loading', () => {
       console.log("loading signal received");
-      setCamStatus({ status: 'loading...', color: '#FFFF00' });
+      setCamStatus({ status: 'Loading...', color: '#FFFF00' });
     })
 
     cameraSocket.on('terminating', () => {
       console.log("terminating signal received");
-      setCamStatus({ status: 'terminating...', color: '#FFFF00' });
+      setCamStatus({ status: 'Terminating...', color: '#FFFF00' });
       cameraSocket.emit("terminate");
     })
 
@@ -159,9 +170,6 @@ const CameraSection = () => {
     })
 
 
-
-
-    
     return () => {
 
     };
@@ -198,7 +206,7 @@ const CameraSection = () => {
               }} />
               <SectionLevel2 title="" className="w-[0rem] ml-[10rem]" />
               <CustomButton title="Reboot(fix)" size={'w-[8rem] h-[4.5rem]'} onClick={() => {
-                setCamStatus({ status: 'reboot', color: '#00F' });
+                setCamStatus({ status: 'Reboot', color: '#00F' });
                 rebootRef.current = true;
 
                 let zedSetting = { targetSetting: 'system', value: 'sys_exit' };

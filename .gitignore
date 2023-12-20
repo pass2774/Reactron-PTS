@@ -25,3 +25,5 @@ yarn-error.log*
 
 # exe
 remoteRobot.exe
+remoteRobot.exe.config
+*.exe

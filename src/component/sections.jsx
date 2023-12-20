@@ -9,7 +9,10 @@ const ConfigSection = ({onEndpointUpdate, moduleProfile, endpoints, onConfigEdit
 
     useEffect(() => {
       setSelectedServer(endpoints.remote[0].name);
-
+      onEndpointUpdate({
+        server:endpoints.remote[0].address,
+        robot:endpoints.robot[0].address
+      });
     }, [endpoints]);
 
     let config = {

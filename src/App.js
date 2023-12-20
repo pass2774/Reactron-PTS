@@ -25,8 +25,8 @@ const cameraSocket = io('https://localhost:3333', { // camera socket server
 
 function App() {
   const [moduleProfile, setModuleProfile] = useState({});
-  const [serverEndpoint, setServerEndpoint] = useState("https://api.portal301.com");
-  const [robotEndPoint, setRobotEndPoint] = useState("");
+  const [selectedRemoteServer, setSelectedRemoteServer] = useState("https://api.portal301.com");
+  const [selectedRobot, setSelectedRobot] = useState("");
   const [closing, setClosing] = useState(false);
 
   const [endpoints, setEndpoints] = useState(      {
@@ -87,8 +87,8 @@ function App() {
   }
 
   const onEndpointUpdate = (endpoint) => {
-    setServerEndpoint(endpoint.server);
-    setRobotEndPoint(endpoint.robot);
+    setSelectedRemoteServer(endpoint.server);
+    setSelectedRobot(endpoint.robot);
   }
 
   return (
@@ -100,7 +100,7 @@ function App() {
           <ConfigSection onEndpointUpdate={onEndpointUpdate} onConfigEdit={onConfigEdit} moduleProfile={moduleProfile} endpoints={endpoints}/>
           <div className="flex flex-col gap-[1rem]">
             <CameraSection />
-            <RobotSection socket={socket} endpoint={{ server: serverEndpoint, robot: robotEndPoint }} />
+            <RobotSection socket={socket} endpoint={{ server: selectedRemoteServer, robot: selectedRobot }} />
           </div>
         </div>
       </div>

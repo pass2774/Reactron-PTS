@@ -1,7 +1,7 @@
 ### Setup
 After pulling the repository to the local development environment,
 
-[1] Download the 'remoteRobot.exe' file from: (github.com/)
+[1] Download the 'remoteRobot.exe' file from the release page
 
 [2] Save it in the '(project path)/public' directory
 

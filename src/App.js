@@ -25,7 +25,8 @@ const cameraSocket = io('https://localhost:3333', { // camera socket server
 
 function App() {
   const [moduleProfile, setModuleProfile] = useState({});
-  const [selectedRemoteServer, setSelectedRemoteServer] = useState("https://api.portal301.com");
+  const [selectedRemoteServer, setSelectedRemoteServer] = useState("");
+  // const [selectedRemoteServer, setSelectedRemoteServer] = useState("https://api.portal301.com");
   const [selectedRobot, setSelectedRobot] = useState("");
   const [closing, setClosing] = useState(false);
 

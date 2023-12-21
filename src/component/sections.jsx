@@ -187,12 +187,19 @@ const RobotSection = ({socket, endpoint}) => {
       console.log("useEffect")
   
       socket.emit('settings', {robotProfile: null});
-  
+
   
       socket.on('robot-dashboard', (args) => {
-        // console.log("robot-dashboard(socket): ", args);
+        console.log("robot-dashboard(socket): ", args);
   
         if (args.hasOwnProperty("isNetworkConnected")) {
+          setSliderValue(100);
+          const requestForm = {
+            io: {
+              speedSlider: 1.00
+            }
+          };
+          socket.emit(sioHeader, requestForm);
           setIsNetworkConnected(args.isNetworkConnected);
         } 
         if (args.hasOwnProperty("isRobotConnected")) {
@@ -205,10 +212,8 @@ const RobotSection = ({socket, endpoint}) => {
           setRobotOperationStatus(args.robotOperationStatus);
           if(args.robotOperationStatus > ROBOT_OPERATION_STATUS_POWER_OFF){
             setIsRobotPoweredOn(true);
-            console.log("setIsRobotPoweredOn(true)");
           }else{
             setIsRobotPoweredOn(false);
-            console.log("setIsRobotPoweredOn(false)");
           }
         } 
         if (args.hasOwnProperty("robotControlMode")) {

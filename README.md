@@ -1,3 +1,23 @@
+### Setup
+After pulling the repository to the local development environment,
+
+[1] Download the 'remoteRobot.exe' file from: (github.com/)
+
+[2] Save it in the '(project path)/public' directory
+
+* Note that this executable file exceeds 50MB in size, making it unsuitable for repository management.
+
+### json files.
+
+Key information for the operation of the system is included in the 'src/config/' directory.
+
+    - endpoints.json - the list of endpoints including the remote control server, robot address.
+      
+    - moduleProfile.json - system's profile.
+
+
+### Basic Knowledge
+
 # Getting Started with Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).

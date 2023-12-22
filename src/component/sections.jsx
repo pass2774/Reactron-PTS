@@ -361,7 +361,7 @@ const RobotSection = ({socket, endpoint}) => {
   
             </div>
   
-            <SectionLevel2 title="Program" className="w-[30rem] ml-[2rem]" enable={isRobotConnected && robotOperationStatus === ROBOT_OPERATION_STATUS_ROBOT_OPERATIONAL}>
+            <SectionLevel2 title="Program" className="w-[30rem] ml-[2rem]" enable={isRobotConnected && robotOperationStatus === ROBOT_OPERATION_STATUS_ROBOT_OPERATIONAL && robotControlMode === "Remote"}>
               <div className="w-full pl-[1rem]">
                 <FieldText field="Name" content="MotionSync.urp" />
                 <FieldText field="Version" content="1.1.0" />
